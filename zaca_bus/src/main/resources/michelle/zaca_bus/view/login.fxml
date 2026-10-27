@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<!-- Inicio de sesión: tarjeta blanca sobre fondo pizarra. -->
+<StackPane styleClass="login-fondo" fx:controller="michelle.zaca_bus.controller.VistaController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+    <VBox alignment="TOP_CENTER" spacing="14" maxWidth="420" maxHeight="-Infinity">
+        <HBox alignment="CENTER" spacing="10">
+            <Region styleClass="marca-barra"/>
+            <Label text="ZACA" styleClass="marca, marca-grande"/>
+        </HBox>
+        <Label text="Terminal de autobuses · Chiapas" styleClass="login-sub"/>
+        <VBox styleClass="login-tarjeta" spacing="16">
+            <Label text="Iniciar sesión" styleClass="ventana-titulo-texto"/>
+            <VBox spacing="6" styleClass="campo">
+                <Label text="USUARIO" styleClass="campo-etiqueta"/>
+                <TextField promptText="Usuario" styleClass="text-field, text-input"/>
+            </VBox>
+            <VBox spacing="6" styleClass="campo">
+                <Label text="CONTRASEÑA" styleClass="campo-etiqueta"/>
+                <PasswordField promptText="Contraseña"/>
+            </VBox>
+            <Label text="Usuario o contraseña incorrectos." styleClass="alerta, alerta-error" visible="false" managed="false" maxWidth="Infinity"/>
+            <Button text="Entrar" styleClass="boton, boton-primario, boton-grande" onAction="#irA" id="abrir-turno" maxWidth="Infinity"/>
+        </VBox>
+        <!-- Solo para ver el diseño: en la versión real el rol lo decide la cuenta. -->
+        <Label text="Vista previa del diseño — entrar como:" styleClass="login-pie"/>
+        <HBox spacing="8" alignment="CENTER">
+            <Button text="Taquillero" styleClass="boton, boton-oscuro, boton-chico" onAction="#irA" id="abrir-turno"/>
+            <Button text="Despachador" styleClass="boton, boton-oscuro, boton-chico" onAction="#irA" id="programar-salida"/>
+            <Button text="Administrador" styleClass="boton, boton-oscuro, boton-chico" onAction="#irA" id="rutas"/>
+        </HBox>
+    </VBox>
+</StackPane>

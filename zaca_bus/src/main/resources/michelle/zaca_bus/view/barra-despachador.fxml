@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.shape.SVGPath?>
+
+<!-- Barra lateral del despachador: se incluye en cada pantalla con fx:include. -->
+<VBox styleClass="lateral" spacing="4" minWidth="230" prefWidth="230" maxWidth="230" fx:controller="michelle.zaca_bus.controller.VistaController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+    <HBox styleClass="marca-caja" alignment="CENTER_LEFT" spacing="10">
+        <Region styleClass="marca-barra"/>
+        <Label text="ZACA" styleClass="marca"/>
+    </HBox>
+    <Label text="DESPACHO" styleClass="seccion-lateral"/>
+    <Button text="Programar salida" id="programar-salida" onAction="#irA" styleClass="nav-boton" maxWidth="Infinity" graphicTextGap="12">
+        <graphic>
+            <SVGPath content="M3 5h18v16H3zM3 10h18M8 3v4M16 3v4M12 14v3h3" styleClass="icono"/>
+        </graphic>
+    </Button>
+    <Button text="Manifiesto" id="manifiesto" onAction="#irA" styleClass="nav-boton" maxWidth="Infinity" graphicTextGap="12">
+        <graphic>
+            <SVGPath content="M9 3h6v4H9zM7 5H5v16h14V5h-2M8 12h8M8 16h5" styleClass="icono"/>
+        </graphic>
+    </Button>
+    <Button text="Abordaje" id="abordaje" onAction="#irA" styleClass="nav-boton" maxWidth="Infinity" graphicTextGap="12">
+        <graphic>
+            <SVGPath content="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h3v3h-3zM18 18h2v2h-2z" styleClass="icono"/>
+        </graphic>
+    </Button>
+    <Region VBox.vgrow="ALWAYS"/>
+    <HBox alignment="CENTER_LEFT" spacing="8" styleClass="nodo">
+        <Circle radius="4" styleClass="nodo-punto"/>
+        <Label text="Nodo" styleClass="nodo-texto"/>
+    </HBox>
+    <VBox styleClass="quien" spacing="1">
+        <Label text="" styleClass="quien-nombre"/>
+        <Label text="" styleClass="quien-detalle"/>
+    </VBox>
+    <Button text="Salir" id="login" onAction="#irA" styleClass="boton-salir" maxWidth="Infinity" graphicTextGap="8">
+        <graphic>
+            <SVGPath content="M9 4H5v16h4M16 8l4 4-4 4M20 12H9" styleClass="icono"/>
+        </graphic>
+    </Button>
+</VBox>

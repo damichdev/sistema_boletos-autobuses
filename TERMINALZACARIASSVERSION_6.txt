@@ -1,0 +1,573 @@
+-- VERSION 6 
+
+
+-- EXTENSIONES Y CONFIGURACIONES
+
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+
+ALTER DATABASE terminal SET timezone TO 'America/Mexico_City';
+
+-- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+-- ESQUEMAS
+
+CREATE SCHEMA administracion;
+
+CREATE SCHEMA viajes;
+
+CREATE SCHEMA ventas;
+
+-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+-- TABLAS EN BRUTO
+
+-- ADMINISTRACION
+
+CREATE TABLE administracion.estado_conexion(
+id_conexion INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+nombre_conexion TEXT NOT NULL UNIQUE
+);
+
+
+CREATE TABLE administracion.terminal(
+id_terminal INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+id_conexion INT NOT NULL,
+nombre_terminal TEXT NOT NULL,
+direccion TEXT NOT NULL,
+CONSTRAINT fk_conexion_terminal FOREIGN KEY (id_conexion) REFERENCES administracion.estado_conexion(id_conexion) ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+
+CREATE TABLE administracion.taquilla(
+id_taquilla INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+id_terminal INT NOT NULL,
+identificador TEXT NOT NULL UNIQUE,
+rango_inicial INT NOT NULL,
+rango_final INT NOT NULL,
+serie_folio TEXT NOT NULL UNIQUE,
+folios_usados INT NOT NULL DEFAULT 0,
+activo BOOLEAN NOT NULL DEFAULT TRUE,
+CONSTRAINT check_folios_positivo CHECK (folios_usados >=0),
+CONSTRAINT check_rangos CHECK (rango_inicial <= rango_final),
+CONSTRAINT fk_terminal_taquilla FOREIGN KEY (id_terminal) REFERENCES administracion.terminal(id_terminal) ON DELETE CASCADE
+);
+
+
+CREATE TABLE administracion.puesto(
+id_puesto INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+nombre_puesto TEXT NOT NULL UNIQUE
+);
+
+
+CREATE TABLE administracion.personal(
+id_personal INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+id_puesto INT NOT NULL,
+nombre_personal TEXT NOT NULL,
+ap_paterno TEXT NOT NULL,
+ap_materno TEXT NOT NULL,
+curp TEXT NOT NULL UNIQUE,
+telefono VARCHAR(10),
+licencia TEXT,
+vigencia DATE,
+CONSTRAINT check_curp_valido CHECK (curp ~ '^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[A-Z0-9][0-9]$'),
+CONSTRAINT check_telefono CHECK (telefono ~'^[0-9]{10}$'),
+CONSTRAINT fk_puesto_personal FOREIGN KEY (id_puesto) REFERENCES administracion.puesto(id_puesto) ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+
+CREATE TABLE administracion.rol(
+id_rol INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+nombre_rol TEXT NOT NULL UNIQUE
+);
+
+
+CREATE TABLE administracion.personal_app(
+id_app INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+id_personal INT NOT NULL UNIQUE,
+id_rol INT NOT NULL,
+id_taquilla INT,
+username TEXT NOT NULL UNIQUE,
+password_hash TEXT NOT NULL,
+activo BOOLEAN NOT NULL DEFAULT TRUE,
+CONSTRAINT fk_personal_app FOREIGN KEY (id_personal) REFERENCES administracion.personal(id_personal) ON DELETE CASCADE,
+CONSTRAINT fk_rol_app FOREIGN KEY (id_rol) REFERENCES administracion.rol(id_rol) ON DELETE RESTRICT ON UPDATE CASCADE,
+CONSTRAINT fk_taquilla_app FOREIGN KEY (id_taquilla) REFERENCES administracion.taquilla(id_taquilla) ON DELETE SET NULL
+);
+
+
+
+-- VIAJES
+
+
+CREATE TABLE viajes.nombre_tipo_bus(
+id_nombre_tipo_bus INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+nombre_tipo_bus TEXT NOT NULL UNIQUE
+);
+
+
+CREATE TABLE viajes.layout(
+id_layout INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+nombre_layout VARCHAR(3) NOT NULL UNIQUE,
+CONSTRAINT check_formato_layout CHECK (nombre_layout ~ '^[1-4]\+[1-4]$')
+);
+
+
+CREATE TABLE viajes.tipo_bus(
+id_tipo_bus INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+id_nombre_tipo_bus INT NOT NULL,
+id_layout INT NOT NULL,
+capacidad INT NOT NULL,
+CONSTRAINT check_capacidad_positivo CHECK (capacidad > 0),
+CONSTRAINT fk_nombre_tipo FOREIGN KEY (id_nombre_tipo_bus) REFERENCES viajes.nombre_tipo_bus(id_nombre_tipo_bus) ON DELETE RESTRICT ON UPDATE CASCADE,
+CONSTRAINT fk_layout FOREIGN KEY (id_layout) REFERENCES viajes.layout(id_layout) ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+
+CREATE TABLE viajes.unidad(
+id_unidad INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+id_tipo_bus INT NOT NULL,
+placa TEXT NOT NULL UNIQUE,
+modelo TEXT NOT NULL,
+anio INT NOT NULL,
+kilometraje INT NOT NULL,
+CONSTRAINT check_anio_futuro CHECK (anio <= EXTRACT(YEAR FROM CURRENT_DATE) +1),
+CONSTRAINT check_anio_pasado CHECK (anio > 1900),
+CONSTRAINT check_km_positivo CHECK (kilometraje >= 0),
+CONSTRAINT fk_tipo_unidad FOREIGN KEY (id_tipo_bus) REFERENCES viajes.tipo_bus(id_tipo_bus) ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+
+CREATE TABLE viajes.tipo_servicio(
+id_servicio INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+nombre_servicio TEXT NOT NULL UNIQUE
+);
+
+
+CREATE TABLE viajes.ruta(
+id_ruta INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+id_servicio INT NOT NULL,
+nombre_ruta TEXT NOT NULL,
+CONSTRAINT fk_servicio_ruta FOREIGN KEY(id_servicio) REFERENCES viajes.tipo_servicio(id_servicio) ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+
+
+CREATE TABLE viajes.ruta_paradas(
+id_parada INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+id_ruta INT NOT NULL,
+id_terminal INT NOT NULL,
+orden INT NOT NULL,
+min_desde_origen INT NOT NULL,
+km_desde_origen INT NOT NULL,
+CONSTRAINT unique_ruta_orden UNIQUE (id_ruta, orden),
+CONSTRAINT unique_ruta_terminal UNIQUE (id_ruta, id_terminal),
+CONSTRAINT check_min_positivo CHECK (min_desde_origen >= 0),
+CONSTRAINT check_km_positivo CHECK (km_desde_origen >= 0),
+CONSTRAINT fk_ruta_parada FOREIGN KEY (id_ruta) REFERENCES viajes.ruta(id_ruta) ON DELETE CASCADE,
+CONSTRAINT fk_terminal_parada FOREIGN KEY (id_terminal) REFERENCES administracion.terminal(id_terminal) ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+
+
+CREATE TABLE viajes.estado_viaje(
+id_estado_viaje INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+nombre_estado_viaje TEXT NOT NULL UNIQUE
+);
+
+
+CREATE TABLE viajes.viaje_programado(
+id_viaje INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+id_ruta INT NOT NULL,
+id_estado_viaje INT NOT NULL,
+id_unidad INT NOT NULL,
+id_conductor INT NOT NULL,
+id_relevo INT,
+fecha_salida TIMESTAMPTZ NOT NULL,
+CONSTRAINT check_conductor_relevo CHECK (id_relevo IS NULL OR id_relevo <> id_conductor),
+CONSTRAINT fk_ruta_viaje FOREIGN KEY (id_ruta) REFERENCES viajes.ruta(id_ruta) ON DELETE RESTRICT ON UPDATE CASCADE,
+CONSTRAINT fk_estado_viaje FOREIGN KEY (id_estado_viaje) REFERENCES viajes.estado_viaje(id_estado_viaje) ON DELETE RESTRICT ON UPDATE CASCADE,
+CONSTRAINT fk_unidad_viaje FOREIGN KEY (id_unidad) REFERENCES viajes.unidad(id_unidad) ON DELETE RESTRICT ON UPDATE CASCADE,
+CONSTRAINT fk_conductor_viaje FOREIGN KEY (id_conductor) REFERENCES administracion.personal(id_personal) ON DELETE RESTRICT ON UPDATE CASCADE,
+CONSTRAINT fk_relevo_viaje FOREIGN KEY (id_relevo) REFERENCES administracion.personal(id_personal) ON DELETE SET NULL
+);
+
+
+
+CREATE INDEX idx_viaje_fecha_salida ON viajes.viaje_programado (fecha_salida);
+
+
+CREATE TABLE viajes.precio_tramo(
+id_ruta INT NOT NULL,
+orden_origen INT NOT NULL,
+orden_destino INT NOT NULL,
+precio DECIMAL(10,2) NOT NULL,
+CONSTRAINT pk_precio_tramo PRIMARY KEY (id_ruta, orden_origen, orden_destino),
+CONSTRAINT check_tramo_orden CHECK (orden_origen < orden_destino),
+CONSTRAINT check_precio_tramo CHECK (precio >= 0),
+CONSTRAINT fk_parada_origen FOREIGN KEY (id_ruta, orden_origen) REFERENCES viajes.ruta_paradas(id_ruta, orden) ON DELETE CASCADE ON UPDATE CASCADE,
+CONSTRAINT fk_parada_destino FOREIGN KEY (id_ruta, orden_destino) REFERENCES viajes.ruta_paradas(id_ruta, orden) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+
+-- CLIENTES
+
+
+CREATE TABLE ventas.pasajero(
+id_pasajero INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+nombre_pasajero TEXT NOT NULL,
+ap_paterno TEXT NOT NULL,
+ap_materno TEXT NOT NULL,
+curp TEXT UNIQUE,
+CONSTRAINT check_curp_valido CHECK (curp ~ '^[A-Z]{4}[0-9]{6}[HMX][A-Z]{5}[A-Z0-9][0-9]$')
+);
+
+
+CREATE TABLE ventas.estado_boleto(
+id_estado_boleto INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+nombre_estado_boleto TEXT NOT NULL UNIQUE
+);
+
+
+CREATE TABLE ventas.tarifa(
+id_tarifa INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+nombre_tarifa TEXT NOT NULL UNIQUE,
+descuento NUMERIC(4,3) NOT NULL DEFAULT 0,
+CONSTRAINT check_descuento CHECK (descuento >= 0 AND descuento <= 1)
+);
+
+
+CREATE TABLE ventas.venta(
+id_venta INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+id_taquilla INT NOT NULL,
+folio INT NOT NULL,
+id_titular INT NOT NULL,
+id_vendedor INT NOT NULL,
+fecha TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+total_pagado DECIMAL(10,2) NOT NULL,
+reemplaza_a INT,
+recibido DECIMAL(10,2) NOT NULL,
+cancelada_por INT,
+cancelada_en TIMESTAMPTZ,
+CONSTRAINT unique_folio UNIQUE (id_taquilla, folio),
+CONSTRAINT check_pagado_positivo CHECK (total_pagado >= 0),
+CONSTRAINT check_recibido CHECK (recibido >= total_pagado),
+CONSTRAINT unique_reemplaza_a UNIQUE (reemplaza_a),
+CONSTRAINT check_cancelacion CHECK ((cancelada_por IS NULL) = (cancelada_en IS NULL)),
+CONSTRAINT fk_taquilla_venta FOREIGN KEY (id_taquilla) REFERENCES administracion.taquilla(id_taquilla) ON DELETE RESTRICT ON UPDATE CASCADE,
+CONSTRAINT fk_pasajero_venta FOREIGN KEY (id_titular) REFERENCES ventas.pasajero(id_pasajero) ON DELETE RESTRICT ON UPDATE CASCADE,
+CONSTRAINT fk_personal_venta FOREIGN KEY (id_vendedor) REFERENCES administracion.personal_app(id_app) ON DELETE RESTRICT ON UPDATE CASCADE,
+CONSTRAINT fk_reemplaza_venta FOREIGN KEY (reemplaza_a) REFERENCES ventas.venta(id_venta) ON DELETE RESTRICT,
+CONSTRAINT fk_cancelada_por FOREIGN KEY (cancelada_por) REFERENCES administracion.personal_app(id_app) ON DELETE RESTRICT
+);
+
+
+CREATE TABLE ventas.boleto(
+id_boleto INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+id_venta INT NOT NULL,
+id_viaje INT NOT NULL,
+id_terminal_origen INT NOT NULL,
+id_terminal_destino INT NOT NULL,
+num_asiento INT NOT NULL,
+tramo_ocupacion int4range NOT NULL,
+id_tarifa INT NOT NULL,
+id_estado_boleto INT NOT NULL,
+precio_unitario DECIMAL(10,2) NOT NULL,
+CONSTRAINT check_asiento_positivo CHECK (num_asiento > 0),
+CONSTRAINT check_precio_positivo CHECK (precio_unitario >= 0),
+CONSTRAINT fk_venta_boleto FOREIGN KEY (id_venta) REFERENCES ventas.venta(id_venta) ON DELETE RESTRICT ON UPDATE CASCADE,
+CONSTRAINT fk_viaje_boleto FOREIGN KEY (id_viaje) REFERENCES viajes.viaje_programado(id_viaje) ON DELETE RESTRICT ON UPDATE CASCADE,
+CONSTRAINT fk_terminal_origen_boleto FOREIGN KEY (id_terminal_origen) REFERENCES administracion.terminal(id_terminal) ON DELETE RESTRICT ON UPDATE CASCADE,
+CONSTRAINT fk_terminal_destino_boleto FOREIGN KEY (id_terminal_destino) REFERENCES administracion.terminal(id_terminal) ON DELETE RESTRICT ON UPDATE CASCADE,
+CONSTRAINT fk_tarifa_boleto FOREIGN KEY (id_tarifa) REFERENCES ventas.tarifa(id_tarifa) ON DELETE RESTRICT ON UPDATE CASCADE,
+CONSTRAINT fk_estado_boleto FOREIGN KEY (id_estado_boleto) REFERENCES ventas.estado_boleto(id_estado_boleto) ON DELETE RESTRICT ON UPDATE CASCADE,
+CONSTRAINT evitar_sobreventa EXCLUDE USING gist (id_viaje WITH =, num_asiento WITH =, tramo_ocupacion WITH &&) WHERE (id_estado_boleto <> 4)
+);
+
+
+-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+-- LLENADO DE TABLAS CATALOGO
+
+INSERT INTO administracion.estado_conexion (id_conexion, nombre_conexion) OVERRIDING SYSTEM VALUE VALUES
+(1, 'CONECTADO'),
+(2, 'CONECTANDO'),
+(3, 'SINCRONIZANDO'),
+(4, 'DESCONECTADO'),
+(5, 'MANTENIMIENTO');
+
+
+INSERT INTO administracion.puesto (id_puesto, nombre_puesto) OVERRIDING SYSTEM VALUE VALUES
+(1, 'CONDUCTOR'),
+(2, 'TAQUILLERO'),
+(3, 'DESPACHADOR'),
+(4, 'MECANICO'),
+(5, 'ADMINISTRADOR');
+
+
+INSERT INTO administracion.rol (id_rol, nombre_rol) OVERRIDING SYSTEM VALUE VALUES
+(1, 'ADMINISTRADOR'),
+(2, 'DESPACHADOR'),
+(3, 'TAQUILLERO');
+
+
+INSERT INTO viajes.nombre_tipo_bus (id_nombre_tipo_bus, nombre_tipo_bus) OVERRIDING SYSTEM VALUE VALUES
+(1, 'PRIMERA'),
+(2, 'EJECUTIVO'),
+(3, 'ORDINARIO');
+
+
+INSERT INTO viajes.layout (id_layout, nombre_layout) OVERRIDING SYSTEM VALUE VALUES
+(1, '2+2'),
+(2, '2+1'),
+(3, '1+1');
+
+
+INSERT INTO viajes.tipo_servicio (id_servicio, nombre_servicio) OVERRIDING SYSTEM VALUE VALUES
+(1, 'DIRECTO'),
+(2, 'ORDINARIO');
+
+
+INSERT INTO viajes.estado_viaje (id_estado_viaje, nombre_estado_viaje) OVERRIDING SYSTEM VALUE VALUES
+(1, 'PROGRAMADO'),
+(2, 'ABORDANDO'),
+(3, 'EN RUTA'),
+(4, 'CERRADO'),
+(5, 'SIN UNIDAD');
+
+
+INSERT INTO ventas.estado_boleto (id_estado_boleto, nombre_estado_boleto) OVERRIDING SYSTEM VALUE VALUES
+(1, 'VIGENTE'),
+(2, 'RESERVADO'),
+(3, 'ABORDADO'),
+(4, 'CANCELADO');
+
+
+INSERT INTO ventas.tarifa (id_tarifa, nombre_tarifa, descuento) OVERRIDING SYSTEM VALUE VALUES
+(1, 'ADULTO', 0),
+(2, 'ESTUDIANTE', 0.5),
+(3, 'INAPAM', 0.5),
+(4, 'INFANTIL', 0.5);
+
+
+-- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+-- VISTAS
+
+
+CREATE OR REPLACE VIEW ventas.v_manifiesto_pasajeros AS
+SELECT
+b.id_viaje,
+b.num_asiento,
+p.nombre_pasajero || ' ' || p.ap_paterno || ' ' || p.ap_materno AS titular_compra,
+t_origen.nombre_terminal AS sube_en,
+t_destino.nombre_terminal AS baja_en,
+tar.nombre_tarifa AS tarifa,
+eb.nombre_estado_boleto AS estado_boleto
+FROM ventas.boleto b
+INNER JOIN ventas.venta v ON b.id_venta = v.id_venta
+INNER JOIN ventas.pasajero p ON v.id_titular = p.id_pasajero
+INNER JOIN administracion.terminal t_origen ON t_origen.id_terminal = b.id_terminal_origen
+INNER JOIN administracion.terminal t_destino ON t_destino.id_terminal = b.id_terminal_destino
+INNER JOIN ventas.tarifa tar ON tar.id_tarifa = b.id_tarifa
+INNER JOIN ventas.estado_boleto eb ON eb.id_estado_boleto = b.id_estado_boleto
+WHERE eb.nombre_estado_boleto IN ('VIGENTE', 'ABORDADO') ORDER BY b.num_asiento ASC;
+
+
+
+CREATE OR REPLACE VIEW viajes.cartelera_viajes AS
+SELECT
+v.id_viaje,
+r.nombre_ruta AS ruta,
+ts.nombre_servicio AS servicio,
+v.fecha_salida,
+ev.nombre_estado_viaje AS estado_viaje,
+u.placa AS unidad,
+u.modelo,
+per.nombre_personal || ' ' || per.ap_paterno || ' ' || per.ap_materno AS conductor,
+COALESCE (rel.nombre_personal || ' ' || rel.ap_paterno || ' ' || rel.ap_materno, 'SIN RELEVO') AS relevo 
+FROM viajes.viaje_programado v
+INNER JOIN viajes.ruta r ON v.id_ruta = r.id_ruta
+INNER JOIN viajes.tipo_servicio ts ON r.id_servicio = ts.id_servicio
+INNER JOIN viajes.estado_viaje ev ON v.id_estado_viaje = ev.id_estado_viaje
+INNER JOIN viajes.unidad u ON v.id_unidad = u.id_unidad
+INNER JOIN administracion.personal per ON v.id_conductor = per.id_personal
+LEFT JOIN administracion.personal rel ON v.id_relevo = rel.id_personal
+ORDER BY v.fecha_salida ASC;
+
+
+CREATE OR REPLACE VIEW viajes.v_autobus_completo AS
+SELECT
+u.id_unidad,
+u.placa,
+u.modelo,
+u.anio,
+u.kilometraje,
+ntb.nombre_tipo_bus AS clase_bus,
+tb.capacidad,
+l.nombre_layout AS distribucion_asientos
+FROM viajes.unidad u
+INNER JOIN viajes.tipo_bus tb ON tb.id_tipo_bus = u.id_tipo_bus
+INNER JOIN viajes.nombre_tipo_bus ntb ON ntb.id_nombre_tipo_bus = tb.id_nombre_tipo_bus
+INNER JOIN viajes.layout l ON l.id_layout = tb.id_layout;
+
+
+CREATE OR REPLACE VIEW administracion.v_directorio_usuarios AS
+SELECT
+pa.username AS usuario,
+p.nombre_personal || ' ' || p.ap_paterno || ' ' || p.ap_materno AS nombre_personal,
+r.nombre_rol AS rol,
+pu.nombre_puesto AS puesto,
+COALESCE(tq.identificador, 'SIN CAJA ASIGNADA') AS caja_asignada,
+COALESCE(term.nombre_terminal, 'SIN TERMINAL OPERATIVA') AS ubicacion
+FROM administracion.personal_app pa
+INNER JOIN administracion.personal p ON pa.id_personal = p.id_personal
+INNER JOIN administracion.rol r ON r.id_rol = pa.id_rol
+INNER JOIN administracion.puesto pu ON pu.id_puesto = p.id_puesto
+LEFT JOIN administracion.taquilla tq ON pa.id_taquilla = tq.id_taquilla
+LEFT JOIN administracion.terminal term ON tq.id_terminal = term.id_terminal;
+
+
+CREATE OR REPLACE VIEW ventas.corte_caja AS
+SELECT 
+(v.fecha AT TIME ZONE 'America/Mexico_City')::DATE AS fecha_operacion,
+COALESCE(term.nombre_terminal, 'GENERAL') AS terminal_venta,
+pa.username AS vendedor,
+COUNT(b.id_boleto) AS boletos_vendidos,
+SUM(b.precio_unitario) AS ingresos_totales
+FROM ventas.boleto b
+INNER JOIN ventas.venta v ON v.id_venta = b.id_venta
+INNER JOIN administracion.personal_app pa ON pa.id_app = v.id_vendedor
+LEFT JOIN administracion.taquilla tq ON tq.id_taquilla = v.id_taquilla
+LEFT JOIN administracion.terminal term ON tq.id_terminal = term.id_terminal
+INNER JOIN ventas.estado_boleto eb ON eb.id_estado_boleto = b.id_estado_boleto
+WHERE eb.nombre_estado_boleto IN ('VIGENTE', 'ABORDADO')
+GROUP BY 1, term.nombre_terminal, pa.username
+ORDER BY fecha_operacion DESC;
+
+-- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+-- FUNCIONES Y TRIGGERS
+
+
+CREATE OR REPLACE FUNCTION ventas.fn_preparar_boleto()
+RETURNS TRIGGER AS $$
+DECLARE
+v_id_ruta INT;
+v_capacidad_bus INT;
+v_orden_origen INT;
+v_orden_destino INT;
+BEGIN
+SELECT vp.id_ruta, tb.capacidad INTO v_id_ruta, v_capacidad_bus
+FROM viajes.viaje_programado vp
+INNER JOIN viajes.unidad u ON vp.id_unidad = u.id_unidad
+INNER JOIN viajes.tipo_bus tb ON tb.id_tipo_bus = u.id_tipo_bus
+WHERE vp.id_viaje = NEW.id_viaje;
+IF NEW.num_asiento > v_capacidad_bus THEN
+RAISE EXCEPTION 'El asiento % no existe, esta unidad solo tiene capacidad para % pasajeros a bordo.', NEW.num_asiento, v_capacidad_bus USING ERRCODE = 'Z0008' ;
+END IF;
+SELECT orden INTO v_orden_origen
+FROM viajes.ruta_paradas
+WHERE id_ruta = v_id_ruta AND id_terminal = NEW.id_terminal_origen;
+IF NOT FOUND THEN
+RAISE EXCEPTION 'La terminal de origen seleccionada no pertenece a la ruta de este viaje.' USING ERRCODE = 'Z0009';
+END IF;
+SELECT orden INTO v_orden_destino
+FROM viajes.ruta_paradas
+WHERE id_ruta = v_id_ruta AND id_terminal = NEW.id_terminal_destino;
+IF NOT FOUND THEN
+RAISE EXCEPTION 'La terminal de destino seleccionada no pertenece a la ruta de este viaje.' USING ERRCODE = 'Z0010';
+END IF;
+IF v_orden_origen >= v_orden_destino THEN
+RAISE EXCEPTION 'El destino del pasajero debe ser despues del punto de origen.' USING ERRCODE = 'Z0011';
+END IF;
+NEW.tramo_ocupacion := int4range(v_orden_origen, v_orden_destino, '[)');
+RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE TRIGGER tigresito_preparar_boleto
+BEFORE INSERT OR UPDATE ON ventas.boleto
+FOR EACH ROW EXECUTE FUNCTION ventas.fn_preparar_boleto();
+
+
+
+
+CREATE OR REPLACE FUNCTION viajes.fn_asignar_conductor()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_chofer INT;
+    v_puesto TEXT;
+    v_licencia TEXT;
+    v_vigencia DATE;
+    v_duracion INT;
+    v_fin TIMESTAMPTZ;
+BEGIN
+    FOREACH v_chofer IN ARRAY ARRAY_REMOVE(ARRAY[NEW.id_conductor, NEW.id_relevo], NULL) LOOP
+        SELECT pu.nombre_puesto, p.licencia, p.vigencia INTO v_puesto, v_licencia, v_vigencia
+        FROM administracion.personal p
+        INNER JOIN administracion.puesto pu ON p.id_puesto = pu.id_puesto
+        WHERE p.id_personal = v_chofer;
+        
+        IF v_puesto <> 'CONDUCTOR' THEN
+            RAISE EXCEPTION 'El empleado % no es CONDUCTOR.', v_chofer USING ERRCODE = 'Z0007';
+        END IF;
+        
+        IF v_licencia IS NULL OR v_vigencia IS NULL OR v_vigencia < (NEW.fecha_salida AT TIME ZONE 'America/Mexico_City')::DATE THEN
+            RAISE EXCEPTION 'La licencia del conductor % no está vigente el día del viaje.', v_chofer USING ERRCODE = 'Z0006';
+        END IF;
+    END LOOP;
+
+    IF NEW.id_estado_viaje IN (1, 2, 3) THEN
+        SELECT MAX(min_desde_origen) INTO v_duracion FROM viajes.ruta_paradas WHERE id_ruta = NEW.id_ruta;
+        v_fin := NEW.fecha_salida + make_interval(mins => COALESCE(v_duracion, 0));
+        
+        IF EXISTS (
+            SELECT 1
+            FROM viajes.viaje_programado o
+            WHERE o.id_viaje <> COALESCE(NEW.id_viaje, -1)
+            AND o.id_estado_viaje IN (1, 2, 3)
+            AND (o.id_unidad = NEW.id_unidad
+            OR o.id_conductor IN (NEW.id_conductor, NEW.id_relevo)
+            OR o.id_relevo IN (NEW.id_conductor, NEW.id_relevo))
+            AND tstzrange(o.fecha_salida, o.fecha_salida + make_interval(mins => COALESCE(
+            (SELECT MAX(rp.min_desde_origen) FROM viajes.ruta_paradas rp WHERE rp.id_ruta = o.id_ruta), 0)), '[)')
+            && tstzrange(NEW.fecha_salida, v_fin, '[)')
+        ) THEN
+            RAISE EXCEPTION 'La unidad o el conductor ya tienen otro viaje en ese horario.' USING ERRCODE = 'Z0012';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tigresito_validad_conductor
+BEFORE INSERT OR UPDATE ON viajes.viaje_programado
+FOR EACH ROW EXECUTE FUNCTION viajes.fn_asignar_conductor();
+
+
+
+
+CREATE OR REPLACE FUNCTION ventas.fn_validar_folio()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_inicial INT;
+    v_final INT;
+BEGIN
+    SELECT rango_inicial, rango_final INTO v_inicial, v_final
+    FROM administracion.taquilla
+    WHERE id_taquilla = NEW.id_taquilla;
+    IF NEW.folio < v_inicial OR NEW.folio > v_final THEN
+        RAISE EXCEPTION 'El folio % está fuera del rango de la taquilla (% a %).', NEW.folio, v_inicial, v_final USING ERRCODE = 'Z0002';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tigresito_validar_folio
+BEFORE INSERT OR UPDATE OF folio, id_taquilla ON ventas.venta
+FOR EACH ROW EXECUTE FUNCTION ventas.fn_validar_folio();
+

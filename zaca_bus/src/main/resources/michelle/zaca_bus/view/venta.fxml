@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.SVGPath?>
+
+<!-- Venta en una sola pantalla: 4 paneles de tamaño fijo (2×2). -->
+<BorderPane styleClass="pagina" fx:controller="michelle.zaca_bus.controller.VentaController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+    <left>
+        <fx:include source="barra-taquillero.fxml"/>
+    </left>
+    <center>
+        <ScrollPane fitToWidth="true" styleClass="pagina-scroll">
+            <VBox styleClass="contenido" spacing="20">
+                <GridPane hgap="20" vgap="20">
+                    <columnConstraints>
+                        <ColumnConstraints percentWidth="50" hgrow="ALWAYS"/>
+                        <ColumnConstraints percentWidth="50" hgrow="ALWAYS"/>
+                    </columnConstraints>
+                    <rowConstraints>
+                        <RowConstraints minHeight="250" prefHeight="250" vgrow="NEVER"/>
+                        <RowConstraints minHeight="560" prefHeight="560" vgrow="NEVER"/>
+                    </rowConstraints>
+                    <VBox styleClass="panel" spacing="14" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                        <HBox alignment="CENTER_LEFT">
+                            <Label text="Destino" styleClass="panel-titulo"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                        </HBox>
+                        <Label fx:id="lblMensaje" styleClass="alerta, alerta-error" maxWidth="Infinity" wrapText="true" visible="false" managed="false"/>
+                        <HBox spacing="14">
+                            <VBox spacing="6" styleClass="campo" HBox.hgrow="ALWAYS">
+                                <Label text="ORIGEN" styleClass="campo-etiqueta"/>
+                                <ComboBox fx:id="cbOrigen" promptText="Origen" maxWidth="Infinity"/>
+                            </VBox>
+                            <VBox spacing="6" styleClass="campo" HBox.hgrow="ALWAYS">
+                                <Label text="DESTINO" styleClass="campo-etiqueta"/>
+                                <ComboBox fx:id="cbDestino" promptText="Elija el destino" maxWidth="Infinity"/>
+                            </VBox>
+                        </HBox>
+                        <VBox spacing="6" styleClass="campo">
+                            <Label text="FECHA" styleClass="campo-etiqueta"/>
+                            <DatePicker fx:id="dpFecha" promptText="Hoy" maxWidth="Infinity"/>
+                        </VBox>
+                    </VBox>
+                    <VBox styleClass="panel" spacing="14" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                        <HBox alignment="CENTER_LEFT">
+                            <Label text="Horario" styleClass="panel-titulo"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                        </HBox>
+                        <Label text="Elija el destino para ver los horarios." styleClass="tabla-vacia"/>
+                        <Region VBox.vgrow="ALWAYS"/>
+                        <Button text="Ver todos los horarios del día" styleClass="boton, boton-secundario, boton-chico" onAction="#abrir" id="horarios-dia"/>
+                    </VBox>
+                    <VBox styleClass="panel" spacing="14" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                        <HBox alignment="CENTER_LEFT">
+                            <Label text="Asientos" styleClass="panel-titulo"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Button text="Mostrar al cliente" styleClass="boton, boton-secundario, boton-chico" onAction="#irA" id="mostrar-cliente"/>
+                        </HBox>
+                        <HBox spacing="24" alignment="CENTER" VBox.vgrow="ALWAYS">
+                            <VBox spacing="12" styleClass="leyenda">
+                                <HBox spacing="8" alignment="CENTER_LEFT">
+                                    <Region styleClass="swatch, swatch-libre"/>
+                                    <Label text="Libre" styleClass="leyenda-texto"/>
+                                </HBox>
+                                <HBox spacing="8" alignment="CENTER_LEFT">
+                                    <Region styleClass="swatch, swatch-ocupado"/>
+                                    <Label text="Ocupado" styleClass="leyenda-texto"/>
+                                </HBox>
+                                <HBox spacing="8" alignment="CENTER_LEFT">
+                                    <Region styleClass="swatch, swatch-elegido"/>
+                                    <Label text="Elegido" styleClass="leyenda-texto"/>
+                                </HBox>
+                            </VBox>
+                            <VBox styleClass="autobus" alignment="TOP_CENTER" maxWidth="-Infinity" maxHeight="-Infinity">
+                                <GridPane hgap="6" vgap="6">
+                                    <columnConstraints>
+                                        <ColumnConstraints/>
+                                        <ColumnConstraints/>
+                                        <ColumnConstraints minWidth="22.0" prefWidth="26.4"/>
+                                        <ColumnConstraints/>
+                                        <ColumnConstraints/>
+                                    </columnConstraints>
+                                    <Button styleClass="asiento, asiento-chofer" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" disable="true" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                                        <graphic>
+                                            <SVGPath content="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 10.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM3 12h6M15 12h6M12 15v6" styleClass="icono"/>
+                                        </graphic>
+                                    </Button>
+                                    <Label text="FRENTE" styleClass="frente" GridPane.columnIndex="3" GridPane.rowIndex="0" GridPane.columnSpan="2"/>
+                                    <Button text="1" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                                    <Button text="2" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                                    <Button text="3" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="3" GridPane.rowIndex="1"/>
+                                    <Button text="4" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="4" GridPane.rowIndex="1"/>
+                                    <Button text="5" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                                    <Button text="6" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                                    <Button text="7" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="3" GridPane.rowIndex="2"/>
+                                    <Button text="8" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="4" GridPane.rowIndex="2"/>
+                                    <Button text="9" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                                    <Button text="10" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                                    <Button text="11" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="3" GridPane.rowIndex="3"/>
+                                    <Button text="12" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="4" GridPane.rowIndex="3"/>
+                                    <Button text="13" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+                                    <Button text="14" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+                                    <Button text="15" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="3" GridPane.rowIndex="4"/>
+                                    <Button text="16" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="4" GridPane.rowIndex="4"/>
+                                    <Button text="17" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
+                                    <Button text="18" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
+                                    <Button text="19" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="3" GridPane.rowIndex="5"/>
+                                    <Button text="20" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="4" GridPane.rowIndex="5"/>
+                                    <Button text="21" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="0" GridPane.rowIndex="6"/>
+                                    <Button text="22" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="6"/>
+                                    <Button text="23" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="3" GridPane.rowIndex="6"/>
+                                    <Button text="24" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="4" GridPane.rowIndex="6"/>
+                                    <Button text="25" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="0" GridPane.rowIndex="7"/>
+                                    <Button text="26" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="7"/>
+                                    <Button text="27" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="3" GridPane.rowIndex="7"/>
+                                    <Button text="28" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="4" GridPane.rowIndex="7"/>
+                                    <Button text="29" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="0" GridPane.rowIndex="8"/>
+                                    <Button text="30" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="8"/>
+                                    <Button text="31" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="3" GridPane.rowIndex="8"/>
+                                    <Button text="32" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="4" GridPane.rowIndex="8"/>
+                                    <Button text="33" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="0" GridPane.rowIndex="9"/>
+                                    <Button text="34" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="9"/>
+                                    <Button text="35" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="3" GridPane.rowIndex="9"/>
+                                    <Button text="36" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="4" GridPane.rowIndex="9"/>
+                                    <Button text="37" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="0" GridPane.rowIndex="10"/>
+                                    <Button text="38" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="10"/>
+                                    <Button text="39" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="3" GridPane.rowIndex="10"/>
+                                    <Button text="40" styleClass="asiento" prefWidth="44" prefHeight="36" minWidth="44" minHeight="36" mnemonicParsing="false" GridPane.columnIndex="4" GridPane.rowIndex="10"/>
+                                </GridPane>
+                            </VBox>
+                        </HBox>
+                    </VBox>
+                    <VBox styleClass="panel" spacing="14" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                        <HBox alignment="CENTER_LEFT">
+                            <Label text="Titular y tarifas" styleClass="panel-titulo"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                        </HBox>
+                        <VBox spacing="6" styleClass="campo">
+                            <Label text="NOMBRE COMPLETO DEL TITULAR" styleClass="campo-etiqueta"/>
+                            <TextField promptText="Como aparece en su identificación" styleClass="text-field, text-input"/>
+                        </VBox>
+                        <VBox spacing="6" styleClass="campo">
+                            <Label text="CURP O IDENTIFICACIÓN" styleClass="campo-etiqueta"/>
+                            <TextField promptText="CURP, INE u otro" styleClass="text-field, text-input"/>
+                        </VBox>
+                        <Label text="TARIFA POR ASIENTO" styleClass="campo-etiqueta"/>
+                        <ScrollPane fitToWidth="true" styleClass="pagina-scroll" prefHeight="96" minHeight="96" maxHeight="96">
+                            <VBox spacing="6"/>
+                        </ScrollPane>
+                        <Region styleClass="separador"/>
+                        <Label text="Cobro" styleClass="panel-titulo"/>
+                        <HBox alignment="BASELINE_LEFT">
+                            <Label text="Total" styleClass="texto-sec"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Label text="\$0.00" styleClass="total-monto"/>
+                        </HBox>
+                        <HBox spacing="14">
+                            <VBox spacing="6" styleClass="campo" HBox.hgrow="ALWAYS">
+                                <Label text="EFECTIVO RECIBIDO" styleClass="campo-etiqueta"/>
+                                <TextField promptText="\$0.00" styleClass="text-field, text-input, mono"/>
+                            </VBox>
+                            <VBox spacing="6" minWidth="130">
+                                <Label text="CAMBIO" styleClass="campo-etiqueta"/>
+                                <Label text="\$0.00" styleClass="cambio-monto"/>
+                            </VBox>
+                        </HBox>
+                        <Region VBox.vgrow="ALWAYS"/>
+                        <Button text="Confirmar e imprimir" styleClass="boton, boton-primario, boton-grande" onAction="#abrir" id="ticket" maxWidth="Infinity"/>
+                    </VBox>
+                </GridPane>
+            </VBox>
+        </ScrollPane>
+    </center>
+</BorderPane>

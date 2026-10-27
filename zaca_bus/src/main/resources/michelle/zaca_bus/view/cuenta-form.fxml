@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<!-- Ventana para crear o editar una cuenta. En el alta se elige entre el personal sin cuenta; en la edición solo se muestra. -->
+<StackPane styleClass="ventana-sombra" fx:controller="michelle.zaca_bus.controller.CuentasController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+    <VBox styleClass="ventana" prefWidth="620" maxWidth="620" maxHeight="-Infinity">
+        <HBox styleClass="ventana-titulo" alignment="CENTER_LEFT">
+            <Label fx:id="lblTitulo" text="Nueva cuenta" styleClass="ventana-titulo-texto"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="×" styleClass="boton, cerrar-x" onAction="#cerrar"/>
+        </HBox>
+        <VBox styleClass="ventana-cuerpo" spacing="16">
+            <VBox spacing="6" styleClass="campo">
+                <Label text="PERSONA (SOLO PERSONAL SIN CUENTA)" styleClass="campo-etiqueta"/>
+                <ComboBox fx:id="cbPersona" promptText="Elija a la persona" maxWidth="Infinity"/>
+                <TextField fx:id="txtPersona" disable="true" styleClass="text-field, text-input, campo-bloqueado"/>
+            </VBox>
+            <GridPane hgap="14" vgap="14">
+                <columnConstraints>
+                    <ColumnConstraints percentWidth="50.0" hgrow="ALWAYS"/>
+                    <ColumnConstraints percentWidth="50.0" hgrow="ALWAYS"/>
+                </columnConstraints>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                    <Label text="ROL" styleClass="campo-etiqueta"/>
+                    <ComboBox fx:id="cbRol" promptText="Rol" maxWidth="Infinity"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                    <Label text="SEDE ASIGNADA" styleClass="campo-etiqueta"/>
+                    <ComboBox fx:id="cbSede" promptText="Sede" maxWidth="Infinity"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                    <Label text="TAQUILLA (SOLO TAQUILLEROS)" styleClass="campo-etiqueta"/>
+                    <ComboBox fx:id="cbTaquilla" promptText="Taquilla" maxWidth="Infinity" disable="true"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                    <Label text="USUARIO (SE GENERA SOLO)" styleClass="campo-etiqueta"/>
+                    <Label fx:id="lblUsuario" styleClass="mono, texto" minHeight="42"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="2" GridPane.columnSpan="2">
+                    <Label fx:id="lblContrasena" text="CONTRASEÑA TEMPORAL" styleClass="campo-etiqueta"/>
+                    <PasswordField fx:id="txtContrasena" promptText="Contraseña" styleClass="password-field, text-field, text-input"/>
+                </VBox>
+            </GridPane>
+            <Label text="Solo podrá trabajar en la sede asignada. El taquillero vende desde la taquilla que se le asigne." styleClass="texto-sec, chico" wrapText="true"/>
+            <Label fx:id="lblError" styleClass="alerta, alerta-error" maxWidth="Infinity" wrapText="true" visible="false" managed="false"/>
+        </VBox>
+        <HBox styleClass="ventana-pie" spacing="10" alignment="CENTER_RIGHT">
+            <Button text="Cancelar" styleClass="boton, boton-secundario" onAction="#cerrar"/>
+            <Button fx:id="btnGuardar" text="Crear cuenta" styleClass="boton, boton-primario" onAction="#guardar"/>
+        </HBox>
+    </VBox>
+</StackPane>

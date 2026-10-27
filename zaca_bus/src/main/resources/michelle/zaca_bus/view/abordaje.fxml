@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<!-- Vista de tableta. Un lector USB teclea el folio en el campo y manda Enter. La cámara no viene en JavaFX básico. -->
+<BorderPane styleClass="pagina, tableta" fx:controller="michelle.zaca_bus.controller.AbordajeController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+    <left>
+        <fx:include source="barra-despachador.fxml"/>
+    </left>
+    <center>
+        <ScrollPane fitToWidth="true" styleClass="pagina-scroll">
+            <VBox styleClass="contenido" spacing="20">
+                <VBox spacing="2">
+                    <Label text="Abordaje" styleClass="titulo-pagina"/>
+                    <Label text="Escanee el QR del boleto. La respuesta es grande y de color para verla de un vistazo." styleClass="texto-sec"/>
+                </VBox>
+                <Label fx:id="lblMensaje" styleClass="alerta, alerta-error" maxWidth="Infinity" wrapText="true" visible="false" managed="false"/>
+                <HBox spacing="14" alignment="BOTTOM_LEFT">
+                    <VBox spacing="6" styleClass="campo" HBox.hgrow="ALWAYS">
+                        <Label text="SALIDA" styleClass="campo-etiqueta"/>
+                        <ComboBox fx:id="cbSalida" promptText="Elija la salida" maxWidth="Infinity"/>
+                    </VBox>
+                    <VBox spacing="6" styleClass="campo" HBox.hgrow="ALWAYS">
+                        <Label text="FOLIO O CÓDIGO QR" styleClass="campo-etiqueta"/>
+                        <TextField fx:id="txtFolio" promptText="Escanee el QR o teclee el folio" onAction="#validar" styleClass="text-field, text-input, mono"/>
+                    </VBox>
+                    <Button text="Validar" styleClass="boton, boton-primario, boton-grande" onAction="#validar"/>
+                </HBox>
+                <VBox fx:id="boxResultado" styleClass="resultado" spacing="4" minHeight="130" visible="false" managed="false">
+                    <Label fx:id="lblTitulo" styleClass="resultado-titulo"/>
+                    <Label fx:id="lblDetalle" styleClass="resultado-detalle" wrapText="true"/>
+                </VBox>
+            </VBox>
+        </ScrollPane>
+    </center>
+</BorderPane>

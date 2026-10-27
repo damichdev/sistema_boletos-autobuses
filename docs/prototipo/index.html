@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zaca · Iniciar sesión</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/css/estilos.css">
+</head>
+<body>
+<div class="login">
+  <div class="login-caja">
+  <div class="login-marca"><span class="marca"><i></i><span>ZACA</span></span><span>Boletaje y despacho de autobuses</span></div>
+  <form class="login-form" id="form" novalidate>
+    <div><h1>Iniciar sesión</h1><p class="sec">Entra con tu usuario y contraseña.</p></div>
+    <div class="campo"><label for="u">Usuario</label><input id="u" class="entrada" autocomplete="username" placeholder="m.constantino" required></div>
+    <div class="campo"><label for="p">Contraseña</label><input id="p" class="entrada" type="password" autocomplete="current-password" required></div>
+    <div class="alerta error" id="error" hidden>Usuario o contraseña incorrectos.</div>
+    <button class="btn grande" type="submit">Entrar</button>
+    <details class="chico sec">
+      <summary style="cursor:pointer">Cuentas de prueba</summary>
+      <p style="margin-top:8px">Contraseña de todas: <span class="mono">zaca2026</span></p>
+      <ul style="margin-top:6px;padding-left:18px" class="mono">
+        <li>m.constantino <span class="sec">· taquilla Tapachula</span></li><li>a.lopez <span class="sec">· taquilla Huixtla</span></li>
+        <li>j.hernandez <span class="sec">· despacho Tapachula</span></li><li>c.ramos <span class="sec">· despacho Huixtla</span></li><li>a.morales <span class="sec">· administración</span></li>
+      </ul>
+      <button type="button" class="btn secundario chico" id="reiniciar" style="margin-top:10px">Reiniciar datos de ejemplo</button>
+    </details>
+  </form>
+  <p class="login-pie">Tapachula · Huixtla · Pijijiapan · Tonalá · Tuxtla Gutiérrez</p>
+  </div>
+</div>
+<script type="module">
+  import { iniciarSesion, cuentaActual, INICIO } from '/js/sesion.js';
+  import { reiniciar } from '/js/estado.js';
+  import { toast } from '/js/ui.js';
+
+  const actual = cuentaActual();
+  if (actual) location.replace(INICIO[actual.rol]);
+
+  document.getElementById('form').onsubmit = e => {
+    e.preventDefault();
+    const { cuenta, error } = iniciarSesion(document.getElementById('u').value, document.getElementById('p').value);
+    if (cuenta) { location.href = INICIO[cuenta.rol]; return; }
+    const caja = document.getElementById('error');
+    caja.textContent = error;
+    caja.hidden = false;
+  };
+  document.getElementById('reiniciar').onclick = () => { reiniciar(); toast('Datos de ejemplo reiniciados'); };
+</script>
+</body>
+</html>

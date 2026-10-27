@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<!-- Solo consulta: no muestra lo vendido ni permite editar o cancelar la salida. Recorrido y ocupación los llena el controlador. -->
+<StackPane styleClass="ventana-sombra" fx:controller="michelle.zaca_bus.controller.DetalleSalidaController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+    <VBox styleClass="ventana" prefWidth="640" maxWidth="640" maxHeight="-Infinity">
+        <HBox styleClass="ventana-titulo" alignment="CENTER_LEFT">
+            <Label text="Detalle de la salida" styleClass="ventana-titulo-texto"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="×" styleClass="boton, cerrar-x" onAction="#cerrar"/>
+        </HBox>
+        <VBox styleClass="ventana-cuerpo" spacing="16">
+            <HBox styleClass="detalle-cabeza" spacing="16" alignment="CENTER_LEFT">
+                <Label fx:id="lblHora" styleClass="horario-hora"/>
+                <Label fx:id="lblRuta" styleClass="horario-tipo"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="lblEstado" styleClass="chip, chip-neutro"/>
+            </HBox>
+            <Label text="Recorrido" styleClass="subtitulo"/>
+            <VBox fx:id="boxRecorrido" spacing="8"/>
+            <Label text="Ocupación por tramo" styleClass="subtitulo"/>
+            <VBox fx:id="boxOcupacion" spacing="10"/>
+            <HBox spacing="12">
+                <VBox styleClass="dato" HBox.hgrow="ALWAYS">
+                    <Label text="UNIDAD" styleClass="campo-etiqueta"/>
+                    <Label fx:id="lblUnidad" styleClass="dato-valor"/>
+                </VBox>
+                <VBox styleClass="dato" HBox.hgrow="ALWAYS">
+                    <Label text="CHOFER" styleClass="campo-etiqueta"/>
+                    <Label fx:id="lblChofer" styleClass="dato-valor"/>
+                    <Label fx:id="lblLicencia" styleClass="texto-sec, chico"/>
+                </VBox>
+            </HBox>
+        </VBox>
+        <HBox styleClass="ventana-pie" spacing="10" alignment="CENTER_RIGHT">
+            <Button text="Cerrar" styleClass="boton, boton-secundario" onAction="#cerrar"/>
+            <Button text="Ver manifiesto" styleClass="boton, boton-primario" onAction="#verManifiesto"/>
+        </HBox>
+    </VBox>
+</StackPane>

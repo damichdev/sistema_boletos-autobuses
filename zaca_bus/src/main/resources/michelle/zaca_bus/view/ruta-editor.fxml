@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<!-- Ventana de alta y edición de rutas. Las filas de paradas y los campos de precio los arma el controlador. -->
+<StackPane styleClass="ventana-sombra" fx:controller="michelle.zaca_bus.controller.RutasController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+    <VBox styleClass="ventana" prefWidth="820" maxWidth="820" maxHeight="-Infinity">
+        <HBox styleClass="ventana-titulo" alignment="CENTER_LEFT">
+            <Label fx:id="lblTitulo" text="Nueva ruta" styleClass="ventana-titulo-texto"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="×" styleClass="boton, cerrar-x" onAction="#cerrar"/>
+        </HBox>
+        <VBox styleClass="ventana-cuerpo" spacing="16">
+            <GridPane hgap="14" vgap="14">
+                <columnConstraints>
+                    <ColumnConstraints percentWidth="50.0" hgrow="ALWAYS"/>
+                    <ColumnConstraints percentWidth="50.0" hgrow="ALWAYS"/>
+                </columnConstraints>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                    <Label text="NOMBRE DE LA RUTA" styleClass="campo-etiqueta"/>
+                    <TextField fx:id="txtNombre" promptText="Nombre de la ruta" styleClass="text-field, text-input"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                    <Label text="SERVICIO" styleClass="campo-etiqueta"/>
+                    <ComboBox fx:id="cbServicio" promptText="Servicio" maxWidth="Infinity"/>
+                </VBox>
+            </GridPane>
+            <Label text="Paradas en orden" styleClass="subtitulo"/>
+            <HBox spacing="10">
+                <Label text="#" styleClass="campo-etiqueta" minWidth="24"/>
+                <Label text="TERMINAL" styleClass="campo-etiqueta" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                <Label text="KM" styleClass="campo-etiqueta" minWidth="100" prefWidth="100"/>
+                <Label text="MINUTOS" styleClass="campo-etiqueta" minWidth="100" prefWidth="100"/>
+                <Region minWidth="66" prefWidth="66"/>
+            </HBox>
+            <VBox fx:id="boxParadas" spacing="8"/>
+            <Button text="+ Agregar parada" styleClass="boton, boton-secundario, boton-chico" onAction="#agregarParada"/>
+            <Label text="Precio por tramo" styleClass="subtitulo"/>
+            <Label text="Un precio para cada combinación de subida y bajada." styleClass="texto-sec, chico"/>
+            <FlowPane fx:id="boxPrecios" hgap="14" vgap="14"/>
+            <Label fx:id="lblError" styleClass="alerta, alerta-error" maxWidth="Infinity" wrapText="true" visible="false" managed="false"/>
+        </VBox>
+        <HBox styleClass="ventana-pie" spacing="10" alignment="CENTER_RIGHT">
+            <Button text="Cancelar" styleClass="boton, boton-secundario" onAction="#cerrar"/>
+            <Button text="Guardar ruta" styleClass="boton, boton-primario" onAction="#guardar"/>
+        </HBox>
+    </VBox>
+</StackPane>

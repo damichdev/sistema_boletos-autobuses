@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<!-- Ventana de alta y edición de unidades. Tipo y acomodo se llenan desde la base. -->
+<StackPane styleClass="ventana-sombra" fx:controller="michelle.zaca_bus.controller.UnidadesController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+    <VBox styleClass="ventana" prefWidth="620" maxWidth="620" maxHeight="-Infinity">
+        <HBox styleClass="ventana-titulo" alignment="CENTER_LEFT">
+            <Label fx:id="lblTitulo" text="Nueva unidad" styleClass="ventana-titulo-texto"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="×" styleClass="boton, cerrar-x" onAction="#cerrar"/>
+        </HBox>
+        <VBox styleClass="ventana-cuerpo" spacing="16">
+            <GridPane hgap="14" vgap="14">
+                <columnConstraints>
+                    <ColumnConstraints percentWidth="50.0" hgrow="ALWAYS"/>
+                    <ColumnConstraints percentWidth="50.0" hgrow="ALWAYS"/>
+                </columnConstraints>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                    <Label text="PLACA" styleClass="campo-etiqueta"/>
+                    <TextField fx:id="txtPlaca" promptText="Placa" styleClass="text-field, text-input, mono"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                    <Label text="MODELO" styleClass="campo-etiqueta"/>
+                    <TextField fx:id="txtModelo" promptText="Modelo" styleClass="text-field, text-input"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                    <Label text="AÑO" styleClass="campo-etiqueta"/>
+                    <TextField fx:id="txtAnio" promptText="Año" styleClass="text-field, text-input, mono"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                    <Label text="KILOMETRAJE" styleClass="campo-etiqueta"/>
+                    <TextField fx:id="txtKm" promptText="Kilometraje" styleClass="text-field, text-input, mono"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="2">
+                    <Label text="TIPO DE SERVICIO" styleClass="campo-etiqueta"/>
+                    <ComboBox fx:id="cbTipo" promptText="Tipo de servicio" maxWidth="Infinity"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                    <Label text="ACOMODO" styleClass="campo-etiqueta"/>
+                    <ComboBox fx:id="cbAcomodo" promptText="Acomodo" maxWidth="Infinity"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="3">
+                    <Label text="CAPACIDAD" styleClass="campo-etiqueta"/>
+                    <TextField fx:id="txtCapacidad" promptText="Capacidad" styleClass="text-field, text-input, mono"/>
+                </VBox>
+            </GridPane>
+            <Label fx:id="lblError" styleClass="alerta, alerta-error" maxWidth="Infinity" wrapText="true" visible="false" managed="false"/>
+        </VBox>
+        <HBox styleClass="ventana-pie" spacing="10" alignment="CENTER_RIGHT">
+            <Button text="Cancelar" styleClass="boton, boton-secundario" onAction="#cerrar"/>
+            <Button text="Guardar" styleClass="boton, boton-primario" onAction="#guardar"/>
+        </HBox>
+    </VBox>
+</StackPane>

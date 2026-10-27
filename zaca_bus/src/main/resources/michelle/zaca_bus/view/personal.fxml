@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.VBox?>
+
+<!-- Los cinco paneles (uno por puesto) los arma PersonalController dentro de la rejilla. -->
+<BorderPane styleClass="pagina" fx:controller="michelle.zaca_bus.controller.PersonalController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+    <left>
+        <fx:include source="barra-administrador.fxml"/>
+    </left>
+    <center>
+        <ScrollPane fitToWidth="true" styleClass="pagina-scroll">
+            <VBox styleClass="contenido" spacing="20">
+                <VBox spacing="2">
+                    <Label text="Personal" styleClass="titulo-pagina"/>
+                    <Label text="Empleados de las terminales. A los choferes se les vigila la vigencia de la licencia." styleClass="texto-sec"/>
+                </VBox>
+                <Label fx:id="lblMensaje" styleClass="alerta, alerta-error" maxWidth="Infinity" wrapText="true" visible="false" managed="false"/>
+                <GridPane fx:id="rejilla" hgap="20" vgap="20">
+                    <columnConstraints>
+                        <ColumnConstraints percentWidth="33.3" hgrow="ALWAYS"/>
+                        <ColumnConstraints percentWidth="33.3" hgrow="ALWAYS"/>
+                        <ColumnConstraints percentWidth="33.3" hgrow="ALWAYS"/>
+                    </columnConstraints>
+                </GridPane>
+            </VBox>
+        </ScrollPane>
+    </center>
+</BorderPane>

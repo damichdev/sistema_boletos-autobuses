@@ -1,0 +1,242 @@
+/* =====================================================================
+   Zaca - Hoja de estilos única (paleta "pizarra y naranja de señalización",
+   docs/2026-10-24-diseno-vistas.md). Los colores viven aquí; el FXML solo
+   usa clases de estilo. El naranja va SOLO en acciones.
+   ===================================================================== */
+
+.root {
+    -color-barra:            #252B33;
+    -color-barra-2:          #2F3640;
+    -color-sobre-barra:      #E6E8EB;
+    -color-fondo:            #F1F2F4;
+    -color-tarjeta:          #FFFFFF;
+    -color-cabeza:           #F7F8F9;
+    -color-linea:            #DDE0E4;
+    -color-texto:            #1B1F24;
+    -color-texto-2:          #5F6670;
+    -color-accion:           #D9580D;
+    -color-accion-hover:     #BF4C0A;
+    -color-accion-suave:     #FDF0E7;
+    -color-ok:               #137A44;
+    -color-ok-bg:            #E2F3E9;
+    -color-aviso:            #8A6100;
+    -color-aviso-bg:         #F8EFD6;
+    -color-error:            #B42318;
+    -color-error-bg:         #FBE7E5;
+    -color-ocupado:          #D3D7DC;
+    -color-ocupado-texto:    #8E959E;
+    -color-libre:            #E3F3FD;
+    -color-libre-borde:      #6FB7E3;
+    -color-libre-texto:      #0F4C75;
+    -color-borde-campo:      #C9CED5;
+
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 14px;
+    -fx-background-color: -color-fondo;
+    -fx-text-fill: -color-texto;
+}
+
+.label { -fx-text-fill: -color-texto; }
+.mono { -fx-font-family: "Consolas"; }
+.texto { -fx-text-fill: -color-texto; }
+.texto-sec { -fx-text-fill: -color-texto-2; }
+.chico { -fx-font-size: 13px; }
+.titulo-pagina { -fx-font-size: 24px; -fx-font-weight: 600; }
+.subtitulo { -fx-font-size: 15px; -fx-font-weight: bold; }
+
+/* ---------- Barra lateral ---------- */
+.lateral { -fx-background-color: -color-barra; -fx-padding: 22 14 18 14; }
+.marca-caja { -fx-padding: 0 10 22 10; }
+.marca-barra { -fx-background-color: #8A929C; -fx-background-radius: 2; -fx-min-width: 10; -fx-pref-width: 10; -fx-max-width: 10; -fx-min-height: 22; -fx-pref-height: 22; -fx-max-height: 22; }
+.marca { -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; }
+.marca-grande { -fx-font-size: 22px; }
+.seccion-lateral { -fx-text-fill: #7D858F; -fx-font-size: 11px; -fx-padding: 6 12 6 12; }
+.icono { -fx-fill: transparent; -fx-stroke: #B9BFC7; -fx-stroke-width: 1.8; -fx-stroke-line-cap: round; -fx-stroke-line-join: round; }
+.nav-boton {
+    -fx-background-color: transparent; -fx-text-fill: #B9BFC7; -fx-alignment: CENTER_LEFT;
+    -fx-pref-height: 42; -fx-padding: 0 12 0 12; -fx-background-radius: 6; -fx-cursor: hand;
+    -fx-border-width: 0 0 0 3; -fx-border-color: transparent;
+}
+.nav-boton:hover { -fx-background-color: -color-barra-2; -fx-text-fill: white; }
+.nav-boton:hover .icono, .nav-boton.activo .icono { -fx-stroke: white; }
+.nav-boton.activo {
+    -fx-background-color: -color-barra-2; -fx-text-fill: white; -fx-font-weight: bold;
+    -fx-border-color: transparent transparent transparent -color-accion;
+}
+.nodo { -fx-padding: 10 12 10 12; }
+.nodo-punto { -fx-fill: #3FB772; }
+.nodo-texto { -fx-text-fill: #B9BFC7; -fx-font-size: 12.5px; }
+.quien { -fx-padding: 12; -fx-border-color: #3A424D transparent transparent transparent; -fx-border-width: 1 0 0 0; }
+.quien-nombre { -fx-text-fill: white; -fx-font-weight: bold; }
+.quien-detalle { -fx-text-fill: #9AA1AB; -fx-font-size: 12px; }
+.boton-salir {
+    -fx-background-color: transparent; -fx-border-color: #47505C; -fx-border-radius: 6; -fx-background-radius: 6;
+    -fx-text-fill: -color-sobre-barra; -fx-pref-height: 38; -fx-cursor: hand;
+}
+.boton-salir:hover { -fx-background-color: -color-barra-2; }
+.boton-salir .icono { -fx-stroke: -color-sobre-barra; }
+
+/* ---------- Páginas ---------- */
+.pagina { -fx-background-color: -color-fondo; }
+.pagina-scroll, .pagina-scroll > .viewport { -fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0; }
+.scroll-pane { -fx-background-color: transparent; }
+.scroll-pane:focused { -fx-background-insets: 0; }
+.contenido { -fx-padding: 28 24 40 24; }
+
+/* ---------- Botones ---------- */
+.boton {
+    -fx-background-radius: 6; -fx-border-radius: 6; -fx-font-weight: bold; -fx-font-size: 14px;
+    -fx-pref-height: 40; -fx-padding: 0 18 0 18; -fx-cursor: hand; -fx-border-width: 1; -fx-border-color: transparent;
+}
+.boton-primario { -fx-background-color: -color-accion; -fx-text-fill: white; }
+.boton-primario:hover { -fx-background-color: -color-accion-hover; }
+.boton-secundario { -fx-background-color: -color-tarjeta; -fx-text-fill: -color-texto; -fx-border-color: -color-linea; }
+.boton-secundario:hover { -fx-background-color: -color-cabeza; }
+.boton-peligro { -fx-background-color: -color-tarjeta; -fx-text-fill: -color-error; -fx-border-color: #EBC3BF; }
+.boton-peligro:hover { -fx-background-color: -color-error-bg; }
+.boton-oscuro { -fx-background-color: -color-barra-2; -fx-text-fill: white; }
+.boton-oscuro:hover { -fx-background-color: #3A424D; }
+.boton-grande { -fx-pref-height: 52; -fx-font-size: 16px; -fx-padding: 0 24 0 24; }
+.boton-chico { -fx-pref-height: 32; -fx-font-size: 13px; -fx-padding: 0 12 0 12; }
+.boton:disabled { -fx-background-color: #E4E6E9; -fx-text-fill: -color-ocupado-texto; -fx-opacity: 1; -fx-border-color: transparent; }
+.boton:focused { -fx-border-color: -color-accion; }
+
+/* ---------- Campos ---------- */
+.campo-etiqueta { -fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: -color-texto-2; }
+.text-field, .password-field {
+    -fx-background-color: white; -fx-border-color: -color-borde-campo; -fx-border-radius: 6; -fx-background-radius: 6;
+    -fx-pref-height: 42; -fx-padding: 0 12 0 12;
+}
+.text-field:focused, .password-field:focused, .combo-box-base:focused {
+    -fx-border-color: -color-accion; -fx-effect: dropshadow(gaussian, rgba(217,88,13,0.35), 6, 0.3, 0, 0);
+}
+.combo-box-base, .date-picker {
+    -fx-background-color: white; -fx-border-color: -color-borde-campo; -fx-border-radius: 6; -fx-background-radius: 6; -fx-pref-height: 42;
+}
+.date-picker > .text-field { -fx-background-color: transparent; -fx-border-color: transparent; -fx-effect: none; }
+.combo-box-base > .arrow-button { -fx-background-color: transparent; }
+.combo-box .list-cell { -fx-padding: 0 8 0 8; }
+.campo-bloqueado { -fx-background-color: -color-cabeza; }
+.buscador { -fx-pref-width: 280; -fx-pref-height: 38; }
+.tableta .text-field, .tableta .password-field, .tableta .combo-box-base { -fx-pref-height: 50; -fx-font-size: 16px; }
+.tableta .boton { -fx-pref-height: 52; -fx-font-size: 16px; }
+
+/* ---------- Tarjetas, tablas, chips ---------- */
+.tarjeta { -fx-background-color: -color-tarjeta; -fx-border-color: -color-linea; -fx-border-radius: 10; -fx-background-radius: 10; -fx-effect: dropshadow(gaussian, rgba(20,25,32,0.06), 3, 0.2, 0, 1); }
+.tarjeta-cuerpo { -fx-padding: 18; }
+.tarjeta-cabeza { -fx-padding: 14 18 14 18; -fx-border-color: transparent transparent -color-linea transparent; }
+.tarjeta-titulo { -fx-font-size: 16px; -fx-font-weight: bold; }
+.tabla { -fx-background-color: transparent; -fx-border-color: transparent; -fx-background-radius: 0 0 10 10; }
+.tabla .column-header-background { -fx-background-color: -color-cabeza; }
+.tabla .column-header { -fx-background-color: -color-cabeza; -fx-border-color: transparent transparent -color-linea transparent; -fx-size: 40; }
+.tabla .column-header .label { -fx-text-fill: -color-texto-2; -fx-font-size: 12px; -fx-font-weight: bold; -fx-alignment: CENTER_LEFT; }
+.tabla .table-row-cell { -fx-background-color: white; -fx-border-color: transparent transparent -color-linea transparent; -fx-cell-size: 46; }
+.tabla .table-row-cell:empty { -fx-background-color: transparent; -fx-border-color: transparent; }
+.tabla .table-row-cell:selected { -fx-background-color: -color-accion-suave; }
+.tabla .table-cell { -fx-padding: 0 16 0 16; -fx-alignment: CENTER_LEFT; }
+.tabla-vacia { -fx-text-fill: -color-texto-2; -fx-padding: 36; }
+.chip { -fx-font-size: 12.5px; -fx-font-weight: bold; -fx-padding: 3 10 3 10; -fx-background-radius: 999; }
+.chip-ok { -fx-background-color: -color-ok-bg; -fx-text-fill: -color-ok; }
+.chip-aviso { -fx-background-color: -color-aviso-bg; -fx-text-fill: -color-aviso; }
+.chip-error { -fx-background-color: -color-error-bg; -fx-text-fill: -color-error; }
+.chip-neutro { -fx-background-color: #E4E6E9; -fx-text-fill: -color-texto-2; }
+.alerta { -fx-background-radius: 6; -fx-padding: 10 14 10 14; }
+.alerta-aviso { -fx-background-color: -color-aviso-bg; -fx-text-fill: -color-aviso; }
+.alerta-error { -fx-background-color: -color-error-bg; -fx-text-fill: -color-error; }
+.alerta-ok { -fx-background-color: -color-ok-bg; -fx-text-fill: -color-ok; }
+.dato { -fx-background-color: -color-cabeza; -fx-border-color: -color-linea; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 12 14 12 14; }
+.dato-valor { -fx-font-size: 16px; -fx-font-weight: bold; }
+.dato-grande { -fx-font-size: 22px; -fx-font-weight: bold; -fx-font-family: "Consolas"; }
+.separador { -fx-background-color: -color-linea; -fx-min-height: 1; -fx-pref-height: 1; -fx-max-height: 1; }
+.progress-bar { -fx-pref-height: 8; -fx-min-height: 8; -fx-max-height: 8; }
+.progress-bar > .track { -fx-background-color: -color-linea; -fx-background-insets: 0; -fx-background-radius: 4; }
+.progress-bar > .bar { -fx-background-color: -color-barra; -fx-background-insets: 0; -fx-background-radius: 4; -fx-padding: 0; }
+.hora-parada { -fx-min-width: 56; -fx-font-weight: bold; }
+
+/* ---------- Venta: paneles ---------- */
+.panel { -fx-background-color: -color-tarjeta; -fx-border-color: -color-linea; -fx-border-radius: 10; -fx-background-radius: 10; -fx-padding: 18; -fx-effect: dropshadow(gaussian, rgba(20,25,32,0.06), 3, 0.2, 0, 1); }
+.panel-titulo { -fx-font-size: 15px; -fx-font-weight: bold; }
+.horario { -fx-background-color: white; -fx-border-color: -color-linea; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12 10 12; -fx-cursor: hand; }
+.horario:hover { -fx-border-color: #B5BBC3; }
+.horario.elegida { -fx-border-color: -color-accion; -fx-border-width: 2; -fx-background-color: -color-accion-suave; -fx-padding: 9 11 9 11; }
+.horario-hora { -fx-font-family: "Consolas"; -fx-font-size: 18px; -fx-font-weight: bold; }
+.horario-tipo { -fx-font-weight: bold; -fx-font-size: 13px; }
+.horario-precio { -fx-font-family: "Consolas"; -fx-font-weight: bold; -fx-font-size: 14px; }
+.total-monto { -fx-font-family: "Consolas"; -fx-font-size: 30px; -fx-font-weight: bold; }
+.cambio-monto { -fx-font-family: "Consolas"; -fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: -color-ok; }
+.precio-fila { -fx-font-weight: bold; }
+.asiento-num { -fx-min-width: 28; -fx-font-weight: bold; }
+.devolver { -fx-border-color: -color-linea transparent transparent transparent; -fx-padding: 12 0 0 0; }
+
+/* ---------- Croquis de asientos ---------- */
+.autobus { -fx-background-color: -color-cabeza; -fx-border-color: -color-linea; -fx-border-radius: 36 36 12 12; -fx-background-radius: 36 36 12 12; -fx-padding: 22 22 18 22; }
+.frente { -fx-font-size: 11px; -fx-text-fill: -color-texto-2; -fx-alignment: CENTER_RIGHT; -fx-max-width: 1000; }
+.asiento {
+    -fx-background-color: -color-libre; -fx-border-color: -color-libre-borde; -fx-border-width: 1.5; -fx-border-radius: 8 8 5 5;
+    -fx-background-radius: 8 8 5 5; -fx-text-fill: -color-libre-texto; -fx-font-family: "Consolas"; -fx-font-weight: bold; -fx-padding: 0; -fx-cursor: hand;
+}
+.asiento:hover { -fx-border-color: #2F8FCB; }
+.asiento-ocupado, .asiento-ocupado:disabled { -fx-background-color: -color-ocupado; -fx-border-color: transparent; -fx-text-fill: -color-ocupado-texto; -fx-cursor: default; -fx-opacity: 1; }
+.asiento-elegido { -fx-background-color: -color-ok; -fx-border-color: -color-ok; -fx-text-fill: white; }
+.asiento-chofer, .asiento-chofer:disabled { -fx-background-color: -color-ocupado; -fx-border-color: transparent; -fx-opacity: 1; -fx-cursor: default; }
+.asiento-chofer .icono { -fx-stroke: -color-ocupado-texto; -fx-stroke-width: 2; }
+.leyenda-texto { -fx-text-fill: -color-texto-2; }
+.leyenda-grande .leyenda-texto { -fx-font-size: 20px; }
+.swatch { -fx-min-width: 18; -fx-min-height: 18; -fx-pref-width: 18; -fx-pref-height: 18; -fx-max-width: 18; -fx-max-height: 18; -fx-background-radius: 4; -fx-border-radius: 4; -fx-border-width: 1.5; }
+.leyenda-grande .swatch { -fx-min-width: 26; -fx-min-height: 26; -fx-pref-width: 26; -fx-pref-height: 26; -fx-max-width: 26; -fx-max-height: 26; }
+.swatch-libre { -fx-background-color: -color-libre; -fx-border-color: -color-libre-borde; }
+.swatch-ocupado { -fx-background-color: -color-ocupado; -fx-border-color: transparent; }
+.swatch-elegido { -fx-background-color: -color-ok; -fx-border-color: -color-ok; }
+
+/* ---------- "Mostrar al cliente" ---------- */
+.cliente { -fx-background-color: -color-fondo; }
+.cliente-cabeza { -fx-padding: 24 40 8 40; }
+.titulo-cliente { -fx-font-size: 32px; -fx-font-weight: bold; }
+.elegidos-cliente { -fx-font-family: "Consolas"; -fx-font-size: 24px; -fx-font-weight: bold; }
+.cliente .asiento { -fx-font-size: 18px; }
+
+/* ---------- Ventanas emergentes ---------- */
+.ventana-sombra { -fx-background-color: transparent; -fx-padding: 22; }
+.ventana { -fx-background-color: white; -fx-border-color: -color-linea; -fx-border-radius: 10; -fx-background-radius: 10; -fx-effect: dropshadow(gaussian, rgba(20,25,32,0.35), 24, 0.2, 0, 8); }
+.ventana-titulo { -fx-background-color: -color-cabeza; -fx-background-radius: 10 10 0 0; -fx-padding: 8 10 8 18; -fx-border-color: transparent transparent -color-linea transparent; }
+.ventana-titulo-texto { -fx-font-size: 16px; -fx-font-weight: bold; }
+.cerrar-x { -fx-background-color: transparent; -fx-font-size: 20px; -fx-text-fill: -color-texto-2; -fx-cursor: hand; -fx-padding: 0 8 0 8; }
+.cerrar-x:hover { -fx-text-fill: -color-texto; }
+.ventana-cuerpo { -fx-padding: 22; }
+.ventana-pie { -fx-padding: 14 18 14 18; -fx-background-color: -color-cabeza; -fx-background-radius: 0 0 10 10; -fx-border-color: -color-linea transparent transparent transparent; }
+.detalle-cabeza { -fx-border-color: transparent transparent -color-linea transparent; -fx-padding: 0 0 16 0; }
+
+/* ---------- Ticket ---------- */
+.ticket { -fx-border-color: #B5BBC3; -fx-border-style: dashed; -fx-border-width: 1.5; -fx-border-radius: 8; -fx-padding: 18; -fx-background-color: white; }
+.ticket .label { -fx-font-family: "Consolas"; }
+.ticket-marca { -fx-font-weight: bold; -fx-font-size: 15px; }
+.ticket-asientos { -fx-font-size: 20px; -fx-font-weight: bold; }
+.qr { -fx-fill: white; -fx-stroke: -color-texto; -fx-stroke-width: 2; -fx-stroke-dash-array: 6 4; }
+.qr-texto { -fx-font-weight: bold; -fx-font-size: 22px; -fx-text-fill: -color-texto-2; }
+
+/* ---------- Abrir turno ---------- */
+.ventanilla { -fx-padding: 22; }
+.ventanilla.apagada { -fx-opacity: 0.75; }
+.ventanilla-nombre { -fx-font-size: 22px; -fx-font-weight: bold; -fx-font-family: "Consolas"; }
+
+/* ---------- Abordaje ---------- */
+.resultado { -fx-background-radius: 12; -fx-padding: 20; -fx-alignment: CENTER_LEFT; }
+.resultado-titulo { -fx-font-size: 26px; -fx-font-weight: bold; }
+.resultado-detalle { -fx-font-size: 15px; }
+.resultado-ok { -fx-background-color: -color-ok-bg; }
+.resultado-ok .resultado-titulo, .resultado-ok .resultado-detalle { -fx-text-fill: -color-ok; }
+.resultado-aviso { -fx-background-color: -color-aviso-bg; }
+.resultado-aviso .resultado-titulo, .resultado-aviso .resultado-detalle { -fx-text-fill: -color-aviso; }
+.resultado-error { -fx-background-color: -color-error-bg; }
+.resultado-error .resultado-titulo, .resultado-error .resultado-detalle { -fx-text-fill: -color-error; }
+
+/* ---------- Personal ---------- */
+.persona-nombre { -fx-font-weight: bold; }
+.lista-personas { -fx-background-color: transparent; -fx-border-color: transparent; }
+.lista-personas .list-cell { -fx-padding: 10 0 10 0; -fx-background-color: transparent; -fx-border-color: transparent transparent -color-linea transparent; }
+
+/* ---------- Inicio de sesión ---------- */
+.login-fondo { -fx-background-color: radial-gradient(center 50% 35%, radius 60%, #2F3640, #252B33); }
+.login-sub { -fx-text-fill: #9AA1AB; }
+.login-tarjeta { -fx-background-color: white; -fx-background-radius: 12; -fx-padding: 32; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.45), 40, 0.1, 0, 14); }
+.login-pie { -fx-text-fill: #9AA1AB; -fx-font-size: 12.5px; }

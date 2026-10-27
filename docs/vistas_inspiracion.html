@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zaca · Boletaje de Autobuses</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F5F7FB;--card:#fff;--ink:#0F1B3D;--mut:#5B6785;--line:#E3E8F2;--soft:#EEF2FA;
+  --pri:#1E3A8A;--pri-2:#3B82F6;--on-pri:#fff;--acc:#F59E0B;--on-acc:#241600;
+  --ok:#15803D;--ok-bg:#DCFCE7;--bad:#DC2626;--bad-bg:#FEE2E2;--warn:#B45309;--warn-bg:#FEF3C7;--info-bg:#DBEAFE;
+  --seat-free:#EAF7EF;--seat-free-b:#86D1A3;--seat-occ:#F1F3F8;--seat-occ-b:#CBD2E1;--seat-res:#FEF3C7;--seat-res-b:#E0A21B;
+  --shadow:0 1px 2px rgba(15,27,61,.06),0 8px 24px rgba(15,27,61,.06);--r:14px;
+  --f-h:'Outfit',system-ui,sans-serif;--f-b:'Work Sans',system-ui,sans-serif;
+}
+:root[data-theme=dark]{
+  --bg:#0A1022;--card:#121B36;--ink:#E8EDFA;--mut:#93A0C2;--line:#222E52;--soft:#18234A;
+  --pri:#6EA0FF;--pri-2:#8DB4FF;--on-pri:#0A1022;--acc:#FBBF24;--on-acc:#241600;
+  --ok:#4ADE80;--ok-bg:#12351F;--bad:#F87171;--bad-bg:#3B1618;--warn:#FBBF24;--warn-bg:#3A2A0A;--info-bg:#17294F;
+  --seat-free:#12301F;--seat-free-b:#2F8F57;--seat-occ:#1A2340;--seat-occ-b:#33406B;--seat-res:#3A2A0A;--seat-res-b:#B7791F;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box;margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-b);-webkit-font-smoothing:antialiased}
+h1,h2,h3,.h{font-family:var(--f-h);font-weight:600;letter-spacing:-.01em}
+h1{font-size:28px}h2{font-size:20px}h3{font-size:16px}
+.mut{color:var(--mut)}.sm{font-size:13px}.num{font-variant-numeric:tabular-nums}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--pri-2);outline-offset:2px}
+.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.i.s{width:16px;height:16px}.i.l{width:28px;height:28px}
+
+/* layout */
+#app{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+.side{background:var(--card);border-right:1px solid var(--line);padding:20px 14px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:6px}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 10px 18px}
+.logo{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--pri),var(--pri-2));color:#fff;display:grid;place-items:center}
+.brand b{font:600 19px var(--f-h);display:block;line-height:1.1}.brand span{font-size:12px;color:var(--mut)}
+.nav-l{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);padding:12px 12px 4px}
+.nav a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;color:var(--mut);text-decoration:none;cursor:pointer;min-height:44px;transition:background .18s,color .18s}
+.nav a:hover{background:var(--soft);color:var(--ink)}
+.nav a.on{background:var(--pri);color:var(--on-pri);font-weight:500}
+.side .me{margin-top:auto;display:flex;gap:10px;align-items:center;padding:12px;border-radius:12px;background:var(--soft)}
+.av{width:36px;height:36px;border-radius:50%;background:var(--acc);color:var(--on-acc);display:grid;place-items:center;font:600 14px var(--f-h)}
+.wrap{min-width:0}
+.top{display:flex;align-items:center;gap:12px;padding:16px 28px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(8px);position:sticky;top:0;z-index:5}
+.top .sp{flex:1}
+main{padding:28px;max-width:1280px;margin:auto}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.head p{color:var(--mut);margin-top:2px}
+
+/* components */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
+.card>.ch{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.g{display:grid;gap:18px}.g2{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+.g-7-5{grid-template-columns:1.4fr 1fr}.g-8-4{grid-template-columns:1.7fr 1fr}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid transparent;border-radius:10px;padding:0 16px;min-height:44px;cursor:pointer;font-weight:500;transition:transform .12s,background .18s,box-shadow .18s;background:var(--pri);color:var(--on-pri)}
+.btn:hover{filter:brightness(1.08)}.btn:active{transform:scale(.97)}
+.btn.acc{background:var(--acc);color:var(--on-acc)}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}.btn.ghost:hover{background:var(--soft)}
+.btn.sm{min-height:36px;padding:0 12px;font-size:13px}
+.btn.ico{padding:0;width:44px}.btn.sm.ico{width:36px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:3px 10px;font-size:12px;font-weight:500;background:var(--soft);color:var(--mut)}
+.chip.ok{background:var(--ok-bg);color:var(--ok)}.chip.bad{background:var(--bad-bg);color:var(--bad)}.chip.warn{background:var(--warn-bg);color:var(--warn)}.chip.info{background:var(--info-bg);color:var(--pri)}
+.dot{width:8px;height:8px;border-radius:50%;background:currentColor}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--mut)}
+.in{min-height:44px;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:0 12px;width:100%}
+.in:focus{border-color:var(--pri-2)}
+.row{display:flex;gap:14px;flex-wrap:wrap}.row>*{flex:1;min-width:150px}
+.kpi{display:flex;flex-direction:column;gap:6px}
+.kpi .v{font:600 32px var(--f-h)}
+.kpi .t{display:flex;align-items:center;gap:8px;color:var(--mut);font-size:13px}
+.kpi .ib{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--soft);color:var(--pri)}
+.bar{height:8px;border-radius:99px;background:var(--soft);overflow:hidden}.bar i{display:block;height:100%;background:var(--pri-2);border-radius:99px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);font-weight:500;padding:10px 12px;border-bottom:1px solid var(--line)}
+td{padding:13px 12px;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:0}tbody tr:hover{background:var(--soft)}
+.scroll{overflow-x:auto}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:6px 14px;cursor:pointer;min-height:36px;color:var(--mut)}
+.tab.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+/* login */
+#login{display:grid;grid-template-columns:1.1fr 1fr;min-height:100vh}
+.hero{background:linear-gradient(150deg,#12286b,#1E3A8A 55%,#2f63d4);color:#fff;padding:48px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+.hero h1{font-size:42px;line-height:1.1;max-width:460px}
+.hero p{max-width:420px;opacity:.85;margin-top:14px}
+.hero svg.route{position:absolute;right:-30px;bottom:40px;width:78%;opacity:.95}
+.formside{display:grid;place-items:center;padding:32px}
+.formbox{width:100%;max-width:400px;display:flex;flex-direction:column;gap:16px}
+.roles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.rolebtn{border:1.5px solid var(--line);border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;background:var(--card);display:flex;flex-direction:column;gap:6px;align-items:center;font-size:13px;color:var(--mut);min-height:76px}
+.rolebtn.on{border-color:var(--pri);color:var(--pri);background:var(--soft);font-weight:500}
+
+/* search results */
+.trip{display:grid;grid-template-columns:130px 1fr 150px;gap:20px;align-items:center}
+.time{font:600 30px var(--f-h)}
+.line{position:relative;display:flex;justify-content:space-between;align-items:flex-start;padding-top:2px}
+.line::before{content:"";position:absolute;left:6px;right:6px;top:8px;height:2px;background:var(--line)}
+.line span{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--mut);text-align:center;max-width:78px}
+.line span::before{content:"";width:14px;height:14px;border-radius:50%;background:var(--card);border:3px solid var(--pri-2)}
+.line span.e::before{background:var(--pri-2)}
+.price{font:600 26px var(--f-h)}
+
+/* sale */
+.stops{display:flex;gap:0;align-items:flex-start;margin:6px 0 4px}
+.stp{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;background:none;border:0;padding:4px 2px;font-size:12px;color:var(--mut);position:relative;min-height:60px}
+.stp::before{content:"";position:absolute;top:13px;left:-50%;right:50%;height:4px;background:var(--line)}
+.stp:first-child::before{display:none}
+.stp.in::before{background:var(--pri-2)}
+.stp b{width:22px;height:22px;border-radius:50%;background:var(--card);border:3px solid var(--line);position:relative;z-index:1}
+.stp.in b{border-color:var(--pri-2)}.stp.end b{background:var(--pri-2)}
+.stp.on{color:var(--ink);font-weight:500}
+.busbox{border:2px solid var(--line);border-radius:36px 36px 18px 18px;padding:18px 22px 22px;max-width:330px;margin:12px auto 0;background:var(--soft)}
+.cab{display:flex;justify-content:space-between;align-items:center;padding:0 6px 12px;color:var(--mut);font-size:12px;border-bottom:2px dashed var(--line);margin-bottom:14px}
+.seats{display:grid;grid-template-columns:repeat(2,1fr) 22px repeat(2,1fr);gap:9px}
+.seat{height:46px;border-radius:10px 10px 6px 6px;border:2px solid var(--seat-free-b);background:var(--seat-free);font:600 14px var(--f-h);cursor:pointer;transition:transform .12s,background .18s}
+.seat:hover:not(:disabled){transform:translateY(-2px)}
+.seat:disabled{background:var(--seat-occ);border-color:var(--seat-occ-b);color:var(--mut);cursor:not-allowed;background-image:repeating-linear-gradient(45deg,transparent 0 5px,rgba(120,130,160,.18) 5px 7px)}
+.seat.sel{background:var(--pri);border-color:var(--pri);color:var(--on-pri);transform:translateY(-2px)}
+.seat.res:disabled{background:var(--seat-res);border-color:var(--seat-res-b);color:var(--warn);background-image:none}
+
+/* vistas de referencia */
+.side{overflow-y:auto}
+td.num{white-space:nowrap}
+.trip-d{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+.trip-d small{display:block;color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+.trip-d b{font:600 17px var(--f-h)}
+.cnt{display:flex;gap:10px;flex-wrap:wrap}
+.cnt div{flex:1;min-width:90px;border-radius:12px;padding:10px 12px;background:var(--soft)}
+.cnt div b{display:block;font:600 24px var(--f-h)}
+.sw{position:relative;width:42px;height:24px;border-radius:99px;background:var(--line);border:0;cursor:pointer;flex-shrink:0;transition:background .18s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .18s}
+.sw[aria-checked=true]{background:var(--ok)}.sw[aria-checked=true]::after{transform:translateX(18px)}
+.seq{display:flex;flex-direction:column}
+.seq div{display:grid;grid-template-columns:28px 1fr auto;gap:12px;align-items:center;padding:10px 0;position:relative}
+.seq div::before{content:"";position:absolute;left:13px;top:0;bottom:0;width:2px;background:var(--line)}
+.seq div:first-child::before{top:50%}.seq div:last-child::before{bottom:50%}
+.seq i{width:16px;height:16px;border-radius:50%;background:var(--card);border:3px solid var(--pri-2);position:relative;z-index:1;margin-left:6px}
+.seq div:first-child i,.seq div:last-child i{background:var(--pri-2)}
+.mx td,.mx th{text-align:center;padding:9px 6px}.mx th:first-child,.mx td:first-child{text-align:left}
+.mx td.z{color:var(--line)}
+.sel-card{cursor:pointer;border:1.5px solid var(--line);transition:border-color .18s}
+.sel-card.on{border-color:var(--pri);background:var(--soft)}
+.layout-mini{display:grid;gap:4px;margin-top:10px}
+.layout-mini span{height:10px;border-radius:3px;background:var(--seat-free-b);opacity:.7}
+.layout-mini span.g{background:none}
+.hb{display:grid;grid-template-columns:160px 1fr 70px;gap:12px;align-items:center;margin-bottom:12px;font-size:14px}
+.hb .bar{height:12px}
+.legend{display:flex;gap:16px;justify-content:center;font-size:12px;color:var(--mut);margin-top:14px;flex-wrap:wrap}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:4px;border:2px solid;margin-right:6px;vertical-align:-1px}
+.sum{display:flex;justify-content:space-between;padding:8px 0}
+.sum.t{border-top:1px dashed var(--line);margin-top:6px;padding-top:14px;font:600 22px var(--f-h)}
+
+/* ticket */
+.ticket{display:grid;grid-template-columns:1fr 220px;max-width:760px;margin:auto;background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid var(--line);overflow:hidden;position:relative}
+.ticket .l{padding:28px}
+.ticket .r{border-left:2px dashed var(--line);padding:28px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:var(--soft)}
+.ticket::before,.ticket::after{content:"";position:absolute;right:199px;width:22px;height:22px;border-radius:50%;background:var(--bg);border:1px solid var(--line)}
+.ticket::before{top:-12px}.ticket::after{bottom:-12px}
+.tk-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
+.tk-route{display:flex;align-items:center;gap:14px;margin-bottom:22px}
+.tk-route .c{font:600 28px var(--f-h)}
+.tk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.tk-grid small{display:block;color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+.tk-grid b{font:600 17px var(--f-h)}
+.qr{background:#fff;padding:10px;border-radius:10px}
+
+/* fleet */
+.unit{display:flex;flex-direction:column;gap:12px}
+.unit .top2{display:flex;justify-content:space-between;align-items:flex-start}
+.unit .ibig{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;background:var(--soft);color:var(--pri)}
+.unit.m .ibig{background:var(--bad-bg);color:var(--bad)}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;color:var(--mut)}.meta b{display:block;color:var(--ink);font:600 15px var(--f-h)}
+
+/* infra */
+.topo{width:100%;height:auto}
+.topo text{font:500 12px var(--f-b);fill:var(--ink)}.topo .s{fill:var(--mut);font-size:11px}
+.topo .bx{fill:var(--card);stroke:var(--line);stroke-width:1.5}
+.topo .hot{stroke:var(--ok);stroke-width:2}
+.topo .ln{stroke:var(--line);stroke-width:2;fill:none}.topo .fl{stroke:var(--pri-2);stroke-width:2.5;fill:none;stroke-dasharray:6 6;animation:dash 1.2s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-24}}
+.tl{display:flex;flex-direction:column;gap:14px}
+.tl div{display:flex;gap:12px}.tl .d{margin-top:6px;width:10px;height:10px;border-radius:50%;background:var(--pri-2);flex-shrink:0}
+.tl .d.ok{background:var(--ok)}.tl .d.bad{background:var(--bad)}.tl .d.warn{background:var(--acc)}
+.perm td:not(:first-child),.perm th:not(:first-child){text-align:center}
+.perm .y{color:var(--ok)}.perm .n{color:var(--line)}
+
+#toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.25s;z-index:50;max-width:92vw;display:flex;gap:10px;align-items:center}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+.view{animation:in .28s ease}@keyframes in{from{opacity:0;transform:translateY(6px)}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+@media(max-width:1000px){
+  .g4{grid-template-columns:repeat(2,1fr)}.g3,.g-7-5,.g-8-4{grid-template-columns:1fr}
+  .trip-d{grid-template-columns:repeat(3,1fr)}.hb{grid-template-columns:110px 1fr 60px}
+  .trip{grid-template-columns:1fr}.ticket{grid-template-columns:1fr}.ticket .r{border-left:0;border-top:2px dashed var(--line)}.ticket::before,.ticket::after{display:none}
+}
+@media(max-width:820px){
+  #app{grid-template-columns:1fr}
+  .side{position:fixed;inset:auto 0 0 0;height:auto;flex-direction:row;padding:6px;z-index:10;border-right:0;border-top:1px solid var(--line);overflow-x:auto}
+  .side .brand,.side .me,.nav-l{display:none}
+  .nav{display:flex;gap:2px;width:100%;justify-content:space-around}
+  .nav a{flex-direction:column;gap:2px;font-size:11px;padding:6px 8px;min-width:58px;text-align:center}
+  main{padding:18px 16px 96px}.top{padding:12px 16px}
+  #login{grid-template-columns:1fr}.hero{min-height:260px;padding:28px}.hero h1{font-size:30px}.hero svg.route{display:none}
+  .g2{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
+<symbol id="i-ticket" viewBox="0 0 24 24"><path d="M4 7h16v3a2 2 0 0 0 0 4v3H4v-3a2 2 0 0 0 0-4z"/><path d="M14 7v10" stroke-dasharray="2 3"/></symbol>
+<symbol id="i-bus" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="14" rx="3"/><path d="M4 11h16M7 17v3M17 17v3"/><circle cx="8" cy="14" r=".6"/><circle cx="16" cy="14" r=".6"/></symbol>
+<symbol id="i-server" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="7" rx="2"/><path d="M7 6.5h.01M7 17.5h.01"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 15c2.5.6 4 2.5 4 6"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6L19 19M5 19l1.4-1.4M17.6 6.4L19 5"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.01"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11a7 7 0 0 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+<symbol id="i-swap" viewBox="0 0 24 24"><path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></symbol>
+<symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 4H5v16h4M16 8l4 4-4 4M20 12H9"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></symbol>
+<symbol id="i-print" viewBox="0 0 24 24"><path d="M7 9V3h10v6M7 17H4v-6h16v6h-3M7 14h10v7H7z"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></symbol>
+<symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0 5 5L21 12.6 12.6 21a2.1 2.1 0 0 1-3-3L18 9.7"/><path d="M14.7 6.3L11 10"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></symbol>
+<symbol id="i-trend" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="5" r="2.5"/><path d="M8.5 19H15a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h6.5"/></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+<symbol id="i-build" viewBox="0 0 24 24"><path d="M3 21h18M5 21V8l7-4 7 4v13M9 21v-5h6v5M9 11h.01M15 11h.01"/></symbol>
+<symbol id="i-id" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2.5"/><path d="M5.5 16c.6-1.6 2-2.5 3.5-2.5s2.9.9 3.5 2.5M15 10h3M15 13h3"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v12M6 10l6 6 6-6M4 20h16"/></symbol>
+</defs>
+</svg>
+
+<div id="login"></div>
+<div id="app" hidden>
+  <aside class="side">
+    <div class="brand"><div class="logo"><svg class="i l"><use href="#i-bus"/></svg></div><div><b>Zaca</b><span>Boletaje y despacho</span></div></div>
+    <nav class="nav" id="nav" aria-label="Principal"></nav>
+    <div class="me"><div class="av" id="avatar">M</div><div><b class="h" id="uname" style="font-size:14px">Michelle</b><div class="sm mut" id="urole"></div></div></div>
+  </aside>
+  <div class="wrap">
+    <header class="top">
+      <span class="chip ok" id="nodechip"><span class="dot"></span> 2 nodos activos</span>
+      <span class="sp"></span>
+      <span class="sm mut" id="tqname">Taquilla Huixtla</span>
+      <button class="btn ghost ico sm" data-act="theme" aria-label="Cambiar tema"><svg class="i" id="themeic"><use href="#i-moon"/></svg></button>
+      <button class="btn ghost sm" data-act="go" data-v="login"><svg class="i s"><use href="#i-logout"/></svg>Salir</button>
+    </header>
+    <main id="view"></main>
+  </div>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const $=(s,r=document)=>r.querySelector(s);
+const ic=(n,c='')=>`<svg class="i ${c}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+const money=n=>'$'+n.toLocaleString('es-MX');
+const stops=['Tapachula','Huixtla','Pijijiapan','Arriaga','Tuxtla Gutiérrez'];
+const seg=[60,90,70,110];
+const tipos={1:['Adulto',1],2:['Estudiante',.8],3:['INAPAM',.5]};
+const sold=[[3,0,1],[5,0,4],[6,0,2],[9,1,4],[10,2,4],[14,0,4],[15,0,4],[17,1,3],[22,0,2],[23,3,4],[26,0,4],[31,0,4],[32,2,4],[36,0,1]];
+const S={role:'taquillero',from:0,to:4,sel:[],tipo:1,pass:{},last:null,filter:'todos',tq:'Huixtla'};
+const roles={taquillero:['Taquillero','ticket'],logistica:['Logística','bus'],admin:['Administrador','shield']};
+const reserved=[[2,0,4],[11,1,3],[27,0,2]];
+const nav=[
+ ['dashboard','home','Inicio',['taquillero','logistica','admin'],'Operación'],
+ ['buscar','search','Buscar viaje',['taquillero','admin'],'Operación'],
+ ['venta','ticket','Vender boleto',['taquillero','admin'],'Operación'],
+ ['boletos','eye','Boletos vendidos',['taquillero','admin'],'Operación'],
+ ['manifiesto','list','Lista de pasajeros',['taquillero','logistica','admin'],'Operación'],
+ ['viajes','cal','Programar viajes',['logistica','admin'],'Planeación'],
+ ['rutas','route','Rutas y tarifas',['logistica','admin'],'Planeación'],
+ ['unidades','bus','Unidades',['logistica','admin'],'Planeación'],
+ ['logistica','wrench','Flota y despacho',['logistica','admin'],'Planeación'],
+ ['terminales','build','Terminales y folios',['admin'],'Administración'],
+ ['personal','id','Personal',['admin'],'Administración'],
+ ['reportes','chart','Reportes',['admin'],'Administración'],
+ ['infra','server','Infraestructura',['admin'],'Administración'],
+ ['usuarios','users','Usuarios y roles',['admin'],'Administración']
+];
+const titles={dashboard:'Inicio',buscar:'Buscar viaje',venta:'Vender boleto',boleto:'Boleto emitido',boletos:'Boletos vendidos',manifiesto:'Lista de pasajeros',viajes:'Programar viajes',rutas:'Rutas y tarifas',unidades:'Unidades',logistica:'Flota y despacho',terminales:'Terminales y folios',personal:'Personal',reportes:'Reportes',infra:'Infraestructura',usuarios:'Usuarios y roles'};
+
+const occ=(s,d,h)=>sold.some(([x,a,b])=>x===s&&d<b&&a<h);
+const res=(s,d,h)=>reserved.some(([x,a,b])=>x===s&&d<b&&a<h);
+const fare=(a,b)=>seg.slice(a,b).reduce((x,y)=>x+y,0);
+const sw=(on,label)=>`<button class="sw" role="switch" aria-checked="${on}" aria-label="${label}" data-act="sw"></button>`;
+const price=()=>Math.round(seg.slice(S.from,S.to).reduce((a,b)=>a+b,0)*tipos[S.tipo][1]);
+function toast(m,k){const t=$('#toast');t.innerHTML=(k==='bad'?ic('alert'):ic('check'))+'<span>'+m+'</span>';t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),3200)}
+const route=()=>(location.hash||'#login').slice(1);
+
+/* ---------- vistas ---------- */
+const V={};
+V.login=()=>`<div class="hero">
+  <div class="brand" style="padding:0"><div class="logo" style="background:rgba(255,255,255,.16)">${ic('bus','l')}</div><div><b style="color:#fff">Zaca</b><span style="color:#cdd9ff">Tapachula · Tuxtla Gutiérrez</span></div></div>
+  <div><h1>Cada asiento, en el tramo exacto.</h1><p>Vende boletos entre paradas intermedias sin sobreventas, aunque una taquilla pierda conexión.</p></div>
+  <svg class="route" viewBox="0 0 520 260" fill="none"><path d="M20 230C120 230 120 120 220 130S330 60 420 70 500 30 500 30" stroke="#ffffff55" stroke-width="3" stroke-dasharray="3 9" stroke-linecap="round"/>
+   ${[[20,230,'Tapachula'],[160,160,'Huixtla'],[290,100,'Pijijiapan'],[420,70,'Arriaga'],[500,30,'Tuxtla']].map(([x,y,n])=>`<circle cx="${x}" cy="${y}" r="9" fill="#F59E0B" stroke="#fff" stroke-width="3"/><text x="${x-8}" y="${y+28}" fill="#fff" font-size="13" font-family="Work Sans">${n}</text>`).join('')}</svg>
+</div>
+<div class="formside"><form class="formbox" onsubmit="event.preventDefault();enter()">
+  <div><h1>Bienvenida</h1><p class="mut">Inicia sesión con tu usuario de taquilla.</p></div>
+  <div class="field"><label for="u">Usuario</label><input id="u" class="in" value="taquilla.huixtla" autocomplete="username"></div>
+  <div class="field"><label for="p">Contraseña</label><input id="p" class="in" type="password" value="12345678" autocomplete="current-password"></div>
+  <div class="field"><label>Entrar como</label><div class="roles" role="radiogroup">
+   ${Object.entries(roles).map(([k,[n,i]])=>`<button type="button" role="radio" aria-checked="${S.role===k}" class="rolebtn ${S.role===k?'on':''}" data-act="role" data-v="${k}">${ic(i)}${n}</button>`).join('')}</div></div>
+  <button class="btn acc" style="min-height:48px">Entrar ${ic('arrow','s')}</button>
+  <p class="sm mut" style="text-align:center">Tu rol define qué pantallas ves y qué puedes escribir en la base de datos.</p>
+</form></div>`;
+
+V.dashboard=()=>{
+  const h=[4,6,12,18,26,31,24,19,22,28,34,29,21,14,9,5];
+  const mx=Math.max(...h);
+  return `<div class="head"><div><h1>Buen día, Michelle</h1><p>Resumen de hoy · ${new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'})}</p></div>
+  ${S.role!=='logistica'?`<button class="btn acc" data-act="go" data-v="buscar">${ic('plus','s')}Nueva venta</button>`:''}</div>
+  <div class="g g4" style="margin-bottom:18px">
+  ${[['ticket','Boletos vendidos','248','+12% vs ayer'],['trend','Ingresos','$43,820','+8% vs ayer'],['bus','Ocupación media','78%','12 salidas hoy'],['server','Replicación','0.4 s','retraso entre nodos']].map(([i,t,v,s])=>`<div class="card kpi"><div class="t"><span class="ib">${ic(i)}</span>${t}</div><div class="v num">${v}</div><div class="sm mut">${s}</div></div>`).join('')}</div>
+  <div class="g g-8-4">
+   <div class="card"><div class="ch"><h2>Ventas por hora</h2><span class="chip info">Hoy</span></div>
+    <svg viewBox="0 0 640 220" style="width:100%" role="img" aria-label="Ventas por hora, pico a las 16 horas">
+     ${[0,1,2,3].map(i=>`<line x1="30" x2="630" y1="${20+i*50}" y2="${20+i*50}" stroke="var(--line)"/>`).join('')}
+     ${h.map((v,i)=>{const bh=v/mx*160,x=40+i*37;return `<rect x="${x}" y="${180-bh}" width="24" height="${bh}" rx="6" fill="${v===mx?'var(--acc)':'var(--pri-2)'}" opacity="${v===mx?1:.75}"/><text x="${x+12}" y="205" text-anchor="middle" font-size="11" fill="var(--mut)">${6+i}h</text>`}).join('')}
+    </svg></div>
+   <div class="card"><div class="ch"><h2>Próximas salidas</h2></div>
+    ${[['08:00','Tapachula → Tuxtla',82],['09:30','Huixtla → Arriaga',55],['11:00','Tapachula → Tuxtla',34],['13:30','Pijijiapan → Tuxtla',12]].map(([t,r,o])=>`<div style="margin-bottom:16px"><div class="sum" style="padding:0 0 6px"><b class="h num">${t}</b><span class="sm mut">${r}</span></div><div class="bar"><i style="width:${o}%"></i></div><div class="sm mut" style="margin-top:4px">${o}% ocupado</div></div>`).join('')}</div>
+  </div>
+  <div class="card" style="margin-top:18px"><div class="ch"><h2>Actividad reciente</h2></div><div class="tl">
+   ${[['ok','Boleto #00412 vendido · asiento 7, Huixtla → Tuxtla','hace 2 min'],['warn','Intento de doble venta bloqueado · asiento 7','hace 2 min'],['ok','Unidad 12 asignada al viaje de las 08:00','hace 14 min'],['bad','Unidad 07 rechazada: mantenimiento preventivo','hace 31 min']].map(([k,t,w])=>`<div><span class="d ${k}"></span><div style="flex:1;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><span>${t}</span><span class="sm mut">${w}</span></div></div>`).join('')}</div></div>`;
+};
+
+V.buscar=()=>`<div class="head"><div><h1>Buscar viaje</h1><p>Origen y destino pueden ser cualquier parada de la ruta.</p></div></div>
+ <div class="card" style="margin-bottom:18px"><div class="row" style="align-items:flex-end">
+  <div class="field"><label>Origen</label><select class="in" id="bo">${stops.map((s,i)=>`<option value="${i}" ${i===S.from?'selected':''}>${s}</option>`).join('')}</select></div>
+  <button class="btn ghost ico" style="flex:0 0 44px;min-width:44px" data-act="swap" aria-label="Invertir">${ic('swap')}</button>
+  <div class="field"><label>Destino</label><select class="in" id="bd">${stops.map((s,i)=>`<option value="${i}" ${i===S.to?'selected':''}>${s}</option>`).join('')}</select></div>
+  <div class="field"><label>Fecha</label><input class="in" type="date" value="2026-10-25"></div>
+  <button class="btn" style="flex:0 0 auto" data-act="find">${ic('search','s')}Buscar</button></div></div>
+ <div class="g">${[['08:00','13:10','Directo',180,12],['11:00','16:20','Ordinario',150,26],['13:30','18:40','Directo',180,31]].map(([a,b,t,p,l],i)=>`
+  <div class="card trip"><div><div class="time num">${a}</div><div class="sm mut">llega ${b}</div></div>
+   <div><div class="line">${stops.map((s,k)=>`<span class="${k===S.from||k===S.to?'e':''}">${s.split(' ')[0]}</span>`).join('')}</div>
+    <div style="margin-top:14px;display:flex;gap:8px"><span class="chip info">${t}</span><span class="chip">${ic('bus','s')}Unidad ${['12','21','12'][i]}</span><span class="chip ${l<15?'warn':'ok'}">${l} asientos libres</span></div></div>
+   <div style="text-align:right"><div class="price num">${money(p)}</div><div class="sm mut" style="margin-bottom:10px">por pasajero</div><button class="btn acc" data-act="go" data-v="venta">Elegir asientos</button></div></div>`).join('')}</div>`;
+
+V.venta=()=>{
+  const seatNo=(r,c)=>r*4+c;
+  const total=price()*S.sel.length;
+  return `<div class="head"><div><h1>Vender boleto</h1><p>Tapachula → Tuxtla · 25 oct · 08:00 · Unidad 12</p></div>
+   <div class="tabs"><span class="tab on">1 · Asientos</span><span class="tab">2 · Pasajero</span><span class="tab">3 · Cobro</span></div></div>
+  <div class="card" style="margin-bottom:18px"><div class="ch"><h2>Detalle del viaje</h2><span class="chip ok"><span class="dot"></span>Abordando en 40 min</span></div>
+   <div class="g g-8-4" style="align-items:center">
+    <div class="trip-d"><div><small>Unidad</small><b>12</b></div><div><small>Placa</small><b>CHS-482-B</b></div><div><small>Servicio</small><b>Directo</b></div><div><small>Conductor</small><b>R. Velázquez</b></div><div><small>Relevo</small><b>J. Castillo</b></div><div><small>Andén</small><b>4</b></div></div>
+    <div class="cnt">${(()=>{let o=0,rv=0;for(let n=1;n<=40;n++){if(occ(n,S.from,S.to))o++;else if(res(n,S.from,S.to))rv++}return [['Libres',40-o-rv,'var(--ok)'],['Vendidos',o,'var(--ink)'],['Reservados',rv,'var(--warn)']].map(([t,v,c])=>`<div><span class="sm mut">${t}</span><b class="num" style="color:${c}">${v}</b></div>`).join('')})()}</div>
+   </div><p class="sm mut" style="margin-top:10px">Los contadores cambian según el tramo elegido.</p></div>
+  <div class="g g-7-5">
+   <div class="card"><div class="ch"><h2>Elige tu tramo</h2><span class="chip info">${stops[S.from]} → ${stops[S.to]}</span></div>
+    <div class="stops">${stops.map((s,i)=>`<button class="stp ${i>S.from&&i<=S.to?'in':''} ${i===S.from||i===S.to?'end on':''}" data-act="stop" data-v="${i}"><b></b>${s}</button>`).join('')}</div>
+    <p class="sm mut">Toca dos paradas. Un asiento ocupado de Tapachula a Huixtla puede venderse de Huixtla a Tuxtla.</p>
+    <div class="busbox"><div class="cab"><span>${ic('user','s')} Conductor</span><span>Frente</span></div>
+     <div class="seats">${[...Array(10).keys()].map(r=>[1,2,0,3,4].map(c=>{if(!c)return'<span></span>';const n=seatNo(r,c),o=occ(n,S.from,S.to),rv=!o&&res(n,S.from,S.to),s=S.sel.includes(n);
+      return `<button class="seat ${s?'sel':''} ${rv?'res':''}" ${o||rv?'disabled':''} data-act="seat" data-v="${n}" aria-label="Asiento ${n} ${o?'ocupado':rv?'reservado':s?'seleccionado':'libre'}" aria-pressed="${s}">${n}</button>`}).join('')).join('')}</div></div>
+    <div class="legend"><span><i style="border-color:var(--seat-free-b);background:var(--seat-free)"></i>Libre</span><span><i style="border-color:var(--pri);background:var(--pri)"></i>Seleccionado</span><span><i style="border-color:var(--seat-res-b);background:var(--seat-res)"></i>Reservado</span><span><i style="border-color:var(--seat-occ-b);background:var(--seat-occ)"></i>Ocupado en este tramo</span></div></div>
+   <div class="g" style="align-content:start">
+    <div class="card"><div class="ch"><h2>Pasajero</h2></div><div class="g" style="gap:12px">
+     <div class="field"><label>Nombre completo</label><input class="in" data-f="name" value="${S.pass.name||''}" placeholder="Como aparece en su identificación"></div>
+     <div class="field"><label>CURP o identificación</label><input class="in" data-f="curp" value="${S.pass.curp||''}" placeholder="18 caracteres"></div>
+     <div class="field"><label>Tipo de pasajero</label><select class="in" data-f="tipo">${Object.entries(tipos).map(([k,[n,d]])=>`<option value="${k}" ${+k===S.tipo?'selected':''}>${n}${d<1?' · '+Math.round((1-d)*100)+'% desc.':''}</option>`).join('')}</select></div></div></div>
+    <div class="card"><div class="ch"><h2>Resumen</h2></div>
+     <div class="sum"><span class="mut">Asientos</span><b>${S.sel.length?S.sel.sort((a,b)=>a-b).join(', '):'—'}</b></div>
+     <div class="sum"><span class="mut">Tarifa por asiento</span><b class="num">${money(price())}</b></div>
+     <div class="sum t"><span>Total</span><span class="num">${money(total)}</span></div>
+     <button class="btn acc" style="width:100%;margin-top:14px;min-height:48px" data-act="confirm" ${S.sel.length?'':'disabled'}>${ic('check','s')}Confirmar venta</button>
+     <button class="btn ghost" style="width:100%;margin-top:8px" data-act="toast" data-v="Asientos apartados 30 min. Si no se pagan, se liberan solos." ${S.sel.length?'':'disabled'}>${ic('clock','s')}Reservar 30 min</button>
+     <p class="sm mut" style="margin-top:10px">${ic('shield','s')} La base de datos impide la doble venta aunque dos taquillas confirmen al mismo tiempo.</p></div>
+   </div></div>`;
+};
+
+V.boleto=()=>{
+  const L=S.last||{seats:[7],from:0,to:4,total:230,name:'Ana Pérez López',folio:'00413'};
+  const qr=(()=>{let x=+L.folio||7,o='';for(let r=0;r<21;r++)for(let c=0;c<21;c++){const f=(r<7&&(c<7||c>13))||(r>13&&c<7);x=(x*1103515245+12345)&0x7fffffff;if(f){const e=(r%14<7?r%14:r-14),cc=c<7?c:c-14;if((e===0||e===6||cc===0||cc===6)||(e>=2&&e<=4&&cc>=2&&cc<=4))o+=`<rect x="${c*5}" y="${r*5}" width="5" height="5"/>`}else if(x%3===0)o+=`<rect x="${c*5}" y="${r*5}" width="5" height="5"/>`}return o})();
+  return `<div class="head"><div><h1>Venta confirmada</h1><p>El boleto quedó registrado en el nodo primario y se replica al secundario.</p></div>
+   <div style="display:flex;gap:10px"><button class="btn ghost" onclick="window.print()">${ic('print','s')}Imprimir</button><button class="btn acc" data-act="go" data-v="buscar">${ic('plus','s')}Nueva venta</button></div></div>
+  <div class="ticket"><div class="l">
+   <div class="tk-h"><div class="brand" style="padding:0"><div class="logo">${ic('bus','l')}</div><div><b>Zaca</b><span>Boleto de pasajero</span></div></div><span class="chip ok">${ic('check','s')}Vigente</span></div>
+   <div class="tk-route"><div><small class="mut sm">Origen</small><div class="c">${stops[L.from]}</div></div>${ic('arrow','l')}<div><small class="mut sm">Destino</small><div class="c">${stops[L.to]}</div></div></div>
+   <div class="tk-grid"><div><small>Pasajero</small><b>${L.name||'Pasajero'}</b></div><div><small>Salida</small><b>25 oct · 08:00</b></div><div><small>Asiento</small><b>${L.seats.join(', ')}</b></div><div><small>Unidad</small><b>12</b></div><div><small>Folio</small><b class="num">#${L.folio}</b></div><div><small>Total</small><b class="num">${money(L.total)}</b></div></div></div>
+   <div class="r"><div class="qr"><svg viewBox="0 0 105 105" width="150" height="150" fill="#0F1B3D">${qr}</svg></div><span class="sm mut">Escanear al abordar</span></div></div>`;
+};
+
+V.boletos=()=>{
+  const data=[['00412','Ana Pérez López','7','Huixtla → Tuxtla','$150','vigente'],['00411','Luis Gómez Ruiz','12','Tapachula → Arriaga','$220','abordado'],['00410','Rosa Díaz','3','Huixtla → Pijijiapan','$90','vigente'],['00409','Carlos Mena','21','Tapachula → Tuxtla','$330','cancelado'],['00408','María Solís','8','Pijijiapan → Tuxtla','$180','abordado'],['00407','Jorge Vera','30','Tapachula → Huixtla','$60','vigente']];
+  const chip={vigente:'info',abordado:'ok',cancelado:'bad'};
+  return `<div class="head"><div><h1>Boletos vendidos</h1><p>Solo puedes cancelar boletos vigentes de tu taquilla.</p></div></div>
+  <div class="card"><div class="row" style="margin-bottom:14px;align-items:center"><div class="tabs" style="flex:2">${['todos','vigente','abordado','cancelado'].map(f=>`<button class="tab ${S.filter===f?'on':''}" data-act="filter" data-v="${f}">${f[0].toUpperCase()+f.slice(1)}</button>`).join('')}</div>
+   <input class="in" placeholder="Buscar por nombre o folio" style="max-width:280px" aria-label="Buscar"></div>
+   <div class="scroll"><table><thead><tr><th>Folio</th><th>Pasajero</th><th>Asiento</th><th>Tramo</th><th>Total</th><th>Estado</th><th></th></tr></thead><tbody>
+   ${data.filter(r=>S.filter==='todos'||r[5]===S.filter).map(r=>`<tr><td class="num">#${r[0]}</td><td><b>${r[1]}</b></td><td>${r[2]}</td><td>${r[3]}</td><td class="num">${r[4]}</td><td><span class="chip ${chip[r[5]]}">${r[5]}</span></td>
+   <td style="text-align:right">${r[5]==='vigente'?`<button class="btn ghost sm" data-act="toast" data-v="Boleto #${r[0]} cancelado · asiento liberado en ambos nodos">${ic('x','s')}Cancelar</button>`:''}</td></tr>`).join('')}</tbody></table></div></div>`;
+};
+
+V.logistica=()=>`<div class="head"><div><h1>Flota y despacho</h1><p>Estado en vivo desde <code>taller_db</code> a través de la vista federada.</p></div><span class="chip info">${ic('db','s')}FDW · v_unidades_taller</span></div>
+ <div class="g g-8-4">
+  <div class="g g2" style="align-content:start">${[['12','Disponible','ok',184220,'12 sep'],['07','Mantenimiento preventivo','bad',201980,'hoy'],['21','Disponible','ok',97410,'30 sep'],['15','En ruta','info',150330,'02 oct'],['09','Disponible','ok',120870,'18 sep'],['03','Mantenimiento preventivo','bad',230115,'hoy']].map(([n,e,k,km,u])=>`
+   <div class="card unit ${k==='bad'?'m':''}"><div class="top2"><div class="ibig">${ic(k==='bad'?'wrench':'bus','l')}</div><span class="chip ${k}">${e}</span></div>
+    <h2>Unidad ${n}</h2><div class="meta"><div><b class="num">${km.toLocaleString('es-MX')}</b>kilómetros</div><div><b>${u}</b>último servicio</div></div>
+    <button class="btn ${k==='bad'?'ghost':'acc'} sm" data-act="toast${k==='bad'?'bad':''}" data-v="${k==='bad'?'Bloqueado: la unidad '+n+' está en mantenimiento preventivo (taller_db)':'Unidad '+n+' asignada al viaje de las 08:00'}">${k==='bad'?'Asignar (bloqueada)':'Asignar a viaje 08:00'}</button></div>`).join('')}</div>
+  <div class="card" style="align-self:start"><div class="ch"><h2>Viajes sin unidad</h2></div>
+   ${[['08:00','Tapachula → Tuxtla'],['11:00','Tapachula → Tuxtla'],['14:30','Huixtla → Arriaga']].map(([t,r])=>`<div class="sum" style="border-bottom:1px solid var(--line)"><div><b class="h num" style="font-size:20px">${t}</b><div class="sm mut">${r}</div></div><span class="chip warn">Pendiente</span></div>`).join('')}
+   <p class="sm mut" style="margin-top:14px">${ic('shield','s')} Si intentas asignar una unidad en mantenimiento, un trigger lo rechaza en la base de datos.</p></div></div>`;
+
+V.infra=()=>`<div class="head"><div><h1>Infraestructura</h1><p>Topología distribuida con Pgpool-II · PostgreSQL 17</p></div>
+  <button class="btn ghost" data-act="toastbad" data-v="Simulación: Nodo 1 caído. Pgpool promovió al Nodo 2 en 2.1 s">${ic('alert','s')}Simular falla del Nodo 1</button></div>
+ <div class="g g-8-4">
+  <div class="card"><div class="ch"><h2>Topología</h2><span class="chip ok"><span class="dot"></span>Todo operativo</span></div>
+   <svg class="topo" viewBox="0 0 640 300" role="img" aria-label="API Java conectada a Pgpool, que escribe al Nodo 1, lee de ambos nodos y consulta taller_db">
+    <path class="ln" d="M320 62V92"/><path class="fl" d="M320 62V92"/>
+    <path class="ln" d="M320 142L150 200M320 142L490 200"/><path class="fl" d="M320 142L150 200"/><path class="fl" d="M320 142L490 200" style="stroke:var(--acc)"/>
+    <path class="ln" d="M240 232H400" stroke-dasharray="4 6"/><path class="fl" d="M240 232H400" style="stroke:var(--ok)"/>
+    <path class="ln" d="M150 262V280H490V262"/>
+    <rect class="bx" x="240" y="14" width="160" height="48" rx="12"/><text x="320" y="36" text-anchor="middle">API Java · Spring</text><text class="s" x="320" y="52" text-anchor="middle">Controller → Service → DAO</text>
+    <rect class="bx hot" x="240" y="92" width="160" height="50" rx="12" style="stroke:var(--pri-2)"/><text x="320" y="114" text-anchor="middle">Pgpool-II</text><text class="s" x="320" y="130" text-anchor="middle">:5433 · watchdog</text>
+    <rect class="bx hot" x="60" y="200" width="180" height="62" rx="12"/><text x="150" y="224" text-anchor="middle">Nodo 1 · Tapachula</text><text class="s" x="150" y="242" text-anchor="middle">PRIMARIO · escrituras + lecturas</text>
+    <rect class="bx" x="400" y="200" width="180" height="62" rx="12"/><text x="490" y="224" text-anchor="middle">Nodo 2 · Tuxtla</text><text class="s" x="490" y="242" text-anchor="middle">RÉPLICA · lecturas</text>
+    <text class="s" x="320" y="226" text-anchor="middle">replicación lógica</text>
+    <rect class="bx" x="240" y="278" width="160" height="20" rx="8" style="display:none"/>
+   </svg>
+   <div class="legend"><span><i style="border-color:var(--pri-2);background:var(--pri-2)"></i>Lecturas</span><span><i style="border-color:var(--acc);background:var(--acc)"></i>Escrituras</span><span><i style="border-color:var(--ok);background:var(--ok)"></i>Replicación</span></div></div>
+  <div class="g" style="align-content:start">
+   ${[['Nodo 1 · Tapachula','Primario','ok','14 conexiones','312 TPS'],['Nodo 2 · Tuxtla','Réplica','info','9 conexiones','188 TPS'],['taller_db','FDW','warn','2 conexiones','4 TPS']].map(([n,r,k,c,t])=>`<div class="card"><div class="ch" style="margin-bottom:8px"><h3>${n}</h3><span class="chip ${k}">${r}</span></div><div class="meta"><div><b>${c.split(' ')[0]}</b>conexiones</div><div><b>${t.split(' ')[0]}</b>transacc./s</div></div></div>`).join('')}</div></div>
+ <div class="g g2" style="margin-top:18px">
+  <div class="card"><div class="ch"><h2>Retraso de replicación</h2><span class="chip ok">0.4 s</span></div>
+   <svg viewBox="0 0 400 130" style="width:100%" role="img" aria-label="Retraso de replicación estable"><polyline fill="none" stroke="var(--pri-2)" stroke-width="3" stroke-linejoin="round" points="0,90 30,82 60,95 90,70 120,78 150,60 180,88 210,80 240,66 270,84 300,72 330,90 360,78 400,84"/><line x1="0" x2="400" y1="120" y2="120" stroke="var(--line)"/></svg></div>
+  <div class="card"><div class="ch"><h2>Eventos</h2></div><div class="tl">
+   ${[['ok','Nodo 1 reingresó como réplica y se resincronizó','ayer 22:14'],['bad','Watchdog: Nodo 1 sin respuesta · failover a Nodo 2','ayer 22:12'],['ok','Respaldo completo con pg_basebackup','ayer 03:00']].map(([k,t,w])=>`<div><span class="d ${k}"></span><div style="flex:1;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><span>${t}</span><span class="sm mut">${w}</span></div></div>`).join('')}</div></div></div>`;
+
+V.usuarios=()=>{
+  const perms=[['viaje','Y','','Y','Y'],['boleto','Y','Y','Y',''],['pasajero','Y','Y','Y',''],['unidad (taller_db)','Y','','Y','Y'],['bitácora','Y','','','']];
+  return `<div class="head"><div><h1>Usuarios y roles</h1><p>Cada usuario es un rol de PostgreSQL con permisos mínimos.</p></div><button class="btn" data-act="toast" data-v="Usuario creado con CREATE ROLE y GRANT">${ic('plus','s')}Nuevo usuario</button></div>
+  <div class="g g-7-5">
+   <div class="card"><div class="scroll"><table><thead><tr><th>Usuario</th><th>Rol</th><th>Taquilla</th><th>Último acceso</th></tr></thead><tbody>
+   ${[['michelle.admin','admin','Central','ahora'],['taquilla.huixtla','taquillero','Huixtla','hace 5 min'],['taquilla.tapachula','taquillero','Tapachula','hace 12 min'],['despacho.norte','logistica','Tuxtla','hace 1 h'],['taller.mecanico','taller','Taller','ayer']].map(([u,r,t,a])=>`<tr><td><div style="display:flex;gap:10px;align-items:center"><div class="av" style="width:32px;height:32px;font-size:13px">${u[0].toUpperCase()}</div><b>${u}</b></div></td><td><span class="chip info">rol_${r}</span></td><td>${t}</td><td class="mut">${a}</td></tr>`).join('')}</tbody></table></div></div>
+   <div class="card"><div class="ch"><h2>Matriz de permisos</h2></div><div class="scroll"><table class="perm"><thead><tr><th>Tabla</th><th>Admin</th><th>Taquil.</th><th>Logíst.</th><th>Taller</th></tr></thead><tbody>
+   ${perms.map(p=>`<tr><td>${p[0]}</td>${p.slice(1).map(v=>`<td class="${v?'y':'n'}">${v?ic('check','s'):'–'}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div></div>
+  <div class="card" style="margin-top:18px"><div class="ch"><h2>Bitácora de auditoría</h2><span class="chip">Trigger · tabla bitacora</span></div><div class="scroll"><table><thead><tr><th>Hora</th><th>Usuario</th><th>Acción</th><th>Detalle</th></tr></thead><tbody>
+   ${[['10:42:08','taquilla.huixtla','INSERT','boleto #00412 · asiento 7'],['10:42:08','taquilla.tapachula','ERROR','exclusion constraint · asiento 7'],['10:30:51','despacho.norte','UPDATE','viaje 101 · unidad 12'],['10:12:03','despacho.norte','ERROR','unidad 07 en mantenimiento'],['09:58:44','taquilla.huixtla','DELETE','boleto #00409 cancelado']].map(([h,u,a,d])=>`<tr><td class="num mut">${h}</td><td>${u}</td><td><span class="chip ${a==='ERROR'?'bad':a==='INSERT'?'ok':'warn'}">${a}</span></td><td>${d}</td></tr>`).join('')}</tbody></table></div></div>`;
+};
+
+/* ---------- vistas nuevas (inspiradas en el video) ---------- */
+const names=['Ana Pérez López','Luis Gómez Ruiz','Rosa Díaz','Carlos Mena','María Solís','Jorge Vera','Elena Ruiz','Tomás Gil','Sofía León','Iván Cruz','Lucía Mora','Pedro Ávila','Karla Ríos','Hugo Paz'];
+
+V.manifiesto=()=>{
+  const pas=sold.map(([n,a,b],i)=>[n,names[i],a,b,['Adulto','Estudiante','INAPAM'][i%5===3?2:i%4===1?1:0],i%3!==2]).sort((x,y)=>x[0]-y[0]);
+  return `<div class="head"><div><h1>Lista de pasajeros</h1><p>Quién sube y quién baja en cada parada. El conductor la usa al abordar.</p></div>
+   <div style="display:flex;gap:10px;flex-wrap:wrap"><select class="in" style="width:auto" aria-label="Viaje"><option>25 oct · 08:00 · Tapachula → Tuxtla · Unidad 12</option><option>25 oct · 11:00 · Tapachula → Tuxtla · Unidad 21</option></select>
+   <button class="btn ghost" onclick="window.print()">${ic('print','s')}Imprimir</button></div></div>
+  <div class="g g-8-4">
+   <div class="card"><div class="ch"><h2>Pasajeros · ${pas.length}</h2><span class="chip info">${pas.filter(p=>p[5]).length} abordaron</span></div>
+    <div class="scroll"><table><thead><tr><th>Asiento</th><th>Pasajero</th><th>Sube</th><th>Baja</th><th>Tipo</th><th>Abordó</th></tr></thead><tbody>
+    ${pas.map(([n,nm,a,b,t,ok])=>`<tr><td class="num"><b>${n}</b></td><td>${nm}</td><td>${stops[a]}</td><td>${stops[b]}</td><td><span class="chip ${t==='Adulto'?'':'info'}">${t}</span></td><td>${sw(ok,'Abordó '+nm)}</td></tr>`).join('')}</tbody></table></div></div>
+   <div class="card" style="align-self:start"><div class="ch"><h2>Movimiento por parada</h2></div>
+    <div class="scroll"><table><thead><tr><th>Parada</th><th>Suben</th><th>Bajan</th><th>A bordo</th></tr></thead><tbody>
+    ${stops.map((s,i)=>`<tr><td>${s}</td><td class="num">${sold.filter(x=>x[1]===i).length||'–'}</td><td class="num">${sold.filter(x=>x[2]===i).length||'–'}</td><td class="num"><b>${sold.filter(x=>x[1]<=i&&i<x[2]).length}</b></td></tr>`).join('')}</tbody></table></div>
+    <p class="sm mut" style="margin-top:12px">Un asiento puede tener dos pasajeros en el mismo viaje si sus tramos no se cruzan.</p></div>
+  </div>`;
+};
+
+V.viajes=()=>{
+  const rows=[['V-101','Tapachula → Tuxtla','25 oct','08:00','12','R. Velázquez','Directo',82,'Abordando','ok',true],['V-102','Tapachula → Tuxtla','25 oct','11:00','21','M. Ochoa','Ordinario',55,'Programado','info',true],['V-103','Huixtla → Tuxtla','25 oct','13:30','09','J. Castillo','Directo',31,'Programado','info',true],['V-104','Tapachula → Arriaga','25 oct','14:30','—','—','Ordinario',0,'Sin unidad','warn',true],['V-099','Tapachula → Tuxtla','24 oct','18:00','15','A. Ruiz','Directo',96,'En ruta','ok',true],['V-095','Huixtla → Tuxtla','24 oct','06:00','12','R. Velázquez','Ordinario',71,'Cerrado','',false]];
+  return `<div class="head"><div><h1>Programar viajes</h1><p>Crea las salidas que después se venden en taquilla.</p></div></div>
+  <div class="card" style="margin-bottom:18px"><div class="ch"><h2>Nuevo viaje</h2></div>
+   <div class="row" style="margin-bottom:14px">
+    <div class="field"><label>Ruta</label><select class="in"><option>Tapachula → Tuxtla</option><option>Tapachula → Arriaga</option><option>Huixtla → Tuxtla</option></select></div>
+    <div class="field"><label>Fecha</label><input class="in" type="date" value="2026-10-26"></div>
+    <div class="field"><label>Hora de salida</label><input class="in" type="time" value="08:00"></div>
+    <div class="field"><label>Servicio</label><select class="in"><option>Directo</option><option>Ordinario</option></select></div></div>
+   <div class="row" style="align-items:flex-end">
+    <div class="field"><label>Unidad</label><select class="in"><option>12 · Primera · 40 asientos</option><option>21 · Primera · 40 asientos</option><option>09 · Ordinario · 44 asientos</option><option disabled>07 · en mantenimiento</option><option disabled>03 · en mantenimiento</option></select></div>
+    <div class="field"><label>Conductor</label><select class="in"><option>R. Velázquez</option><option>M. Ochoa</option><option>A. Ruiz</option><option disabled>P. Luna · licencia vencida</option></select></div>
+    <div class="field"><label>Relevo (opcional)</label><select class="in"><option>—</option><option>J. Castillo</option></select></div>
+    <button class="btn" style="flex:0 0 auto" data-act="toast" data-v="Viaje V-105 creado. Ya aparece en Buscar viaje.">${ic('plus','s')}Crear viaje</button></div>
+   <p class="sm mut" style="margin-top:12px">${ic('shield','s')} Las unidades en mantenimiento y los conductores con licencia vencida aparecen bloqueados.</p></div>
+  <div class="card"><div class="row" style="margin-bottom:14px;align-items:center"><div class="tabs" style="flex:2">${['Hoy','Mañana','Esta semana'].map((t,i)=>`<span class="tab ${i===0?'on':''}">${t}</span>`).join('')}</div>
+   <input class="in" placeholder="Buscar por ruta o unidad" style="max-width:280px" aria-label="Buscar viaje"></div>
+   <div class="scroll"><table><thead><tr><th>Viaje</th><th>Ruta</th><th>Fecha</th><th>Salida</th><th>Unidad</th><th>Conductor</th><th>Servicio</th><th>Ocupación</th><th>Estado</th><th>Activo</th></tr></thead><tbody>
+   ${rows.map(([v,r,f,h,u,c,s,o,e,k,a])=>`<tr><td class="num"><b>${v}</b></td><td>${r}</td><td>${f}</td><td class="num">${h}</td><td>${u}</td><td>${c}</td><td>${s}</td><td style="min-width:110px"><div class="bar"><i style="width:${o}%"></i></div><span class="sm mut">${o}%</span></td><td><span class="chip ${k}">${e}</span></td><td>${sw(a,'Viaje '+v+' activo')}</td></tr>`).join('')}</tbody></table></div></div>`;
+};
+
+const rutas=[['Tapachula → Tuxtla',[0,1,2,3,4],'Directo y ordinario'],['Tapachula → Arriaga',[0,1,2,3],'Ordinario'],['Huixtla → Tuxtla',[1,2,3,4],'Directo']];
+const mins=[0,45,120,180,300],kms=[0,40,125,190,330];
+V.rutas=()=>{
+  const [nm,ps]=rutas[S.ruta||0];
+  return `<div class="head"><div><h1>Rutas y tarifas</h1><p>Cada ruta es una lista ordenada de paradas. El precio sale de sumar los segmentos del tramo.</p></div>
+   <button class="btn" data-act="toast" data-v="Ruta nueva: agrega las paradas en orden">${ic('plus','s')}Nueva ruta</button></div>
+  <div class="g g3" style="margin-bottom:18px">${rutas.map(([n,p,s],i)=>`<button class="card sel-card ${i===(S.ruta||0)?'on':''}" style="text-align:left" data-act="ruta" data-v="${i}" aria-pressed="${i===(S.ruta||0)}">
+    <div class="ch" style="margin-bottom:6px"><h3>${n}</h3>${ic('route')}</div><div class="meta"><div><b>${p.length}</b>paradas</div><div><b>${kms[p.at(-1)]-kms[p[0]]} km</b>${Math.floor((mins[p.at(-1)]-mins[p[0]])/60)} h ${(mins[p.at(-1)]-mins[p[0]])%60} min</div></div><div class="sm mut" style="margin-top:8px">${s}</div></button>`).join('')}</div>
+  <div class="g g-7-5">
+   <div class="card"><div class="ch"><h2>Tarifas por tramo · ${nm}</h2><span class="chip info">Adulto</span></div>
+    <div class="scroll"><table class="mx"><thead><tr><th>Sube en ↓ · Baja en →</th>${ps.slice(1).map(j=>`<th>${stops[j].split(' ')[0]}</th>`).join('')}</tr></thead><tbody>
+    ${ps.slice(0,-1).map(i=>`<tr><td><b>${stops[i]}</b></td>${ps.slice(1).map(j=>j>i?`<td class="num">${money(fare(i,j))}</td>`:'<td class="z">–</td>').join('')}</tr>`).join('')}</tbody></table></div>
+    <p class="sm mut" style="margin-top:12px">Estudiante paga 80% e INAPAM 50%. El boleto guarda su tramo como rango <code>[sube, baja)</code> para no chocar con otro pasajero en el mismo asiento.</p></div>
+   <div class="card"><div class="ch"><h2>Paradas</h2><button class="btn ghost sm" data-act="toast" data-v="Parada agregada al final de la ruta">${ic('plus','s')}Agregar</button></div>
+    <div class="seq">${ps.map((i,k)=>`<div><i></i><span><b>${stops[i]}</b><br><span class="sm mut">Terminal ${stops[i].split(' ')[0]}</span></span><span class="sm mut num" style="text-align:right">${k?'+'+(mins[i]-mins[ps[0]])+' min':'Salida'}<br>${kms[i]-kms[ps[0]]} km</span></div>`).join('')}</div></div>
+  </div>`;
+};
+
+const tiposBus=[['Primera',40,'2+2','Baño, aire, pantallas'],['Ejecutivo',32,'2+1','Asientos reclinables, baño'],['Ordinario',44,'2+2','Aire acondicionado']];
+V.unidades=()=>`<div class="head"><div><h1>Unidades</h1><p>Registro de autobuses. El estado de mantenimiento viene de <code>taller_db</code>.</p></div></div>
+ <div class="g g-8-4">
+  <div class="g" style="align-content:start">
+   <div class="card"><div class="ch"><h2>Registrar unidad</h2></div>
+    <div class="row" style="margin-bottom:14px"><div class="field"><label>Número económico</label><input class="in" placeholder="Ej. 22"></div><div class="field"><label>Placa</label><input class="in" placeholder="CHS-000-A"></div><div class="field"><label>Año</label><input class="in" type="number" value="2024"></div></div>
+    <div class="row" style="align-items:flex-end"><div class="field"><label>Marca y modelo</label><input class="in" placeholder="Volvo 9800"></div><div class="field"><label>Tipo de autobús</label><select class="in">${tiposBus.map(([n,a])=>`<option>${n} · ${a} asientos</option>`).join('')}</select></div>
+     <button class="btn" style="flex:0 0 auto" data-act="toast" data-v="Unidad registrada. Su mapa de asientos se crea según el tipo.">${ic('plus','s')}Guardar</button></div></div>
+   <div class="card"><div class="ch"><h2>Unidades registradas</h2><input class="in" placeholder="Buscar placa o número" style="max-width:240px" aria-label="Buscar unidad"></div>
+    <div class="scroll"><table><thead><tr><th>Unidad</th><th>Placa</th><th>Modelo</th><th>Tipo</th><th>Km</th><th>Estado</th><th>Activa</th></tr></thead><tbody>
+    ${[['12','CHS-482-B','Volvo 9800 · 2022','Primera',184220,'Disponible','ok'],['21','CHS-519-A','Irizar i6 · 2023','Primera',97410,'Disponible','ok'],['15','CHS-307-C','Volvo 9700 · 2019','Ejecutivo',150330,'En ruta','info'],['09','CHS-221-B','Mercedes Torino · 2020','Ordinario',120870,'Disponible','ok'],['07','CHS-118-A','Volvo 9700 · 2017','Primera',201980,'Mantenimiento','bad'],['03','CHS-096-C','Irizar PB · 2015','Ordinario',230115,'Mantenimiento','bad']].map(([n,p,m,t,k,e,c])=>`<tr><td><b>${n}</b></td><td class="num">${p}</td><td>${m}</td><td>${t}</td><td class="num">${k.toLocaleString('es-MX')}</td><td><span class="chip ${c}">${e}</span></td><td>${sw(c!=='bad','Unidad '+n+' activa')}</td></tr>`).join('')}</tbody></table></div></div>
+  </div>
+  <div class="g" style="align-content:start"><h2 style="margin-top:4px">Tipos de autobús</h2>
+   ${tiposBus.map(([n,a,d,x])=>{const cols=d==='2+2'?'1fr 1fr 8px 1fr 1fr':'1fr 1fr 8px 1fr';return `<div class="card"><div class="ch" style="margin-bottom:4px"><h3>${n}</h3><span class="chip">${d}</span></div>
+    <div class="meta"><div><b>${a}</b>asientos</div><div><b>${Math.round(a/(d==='2+2'?4:3))}</b>filas</div></div>
+    <div class="layout-mini" style="grid-template-columns:${cols}" aria-hidden="true">${[...Array(4)].map(()=>cols.split(' ').map(c=>`<span class="${c==='8px'?'g':''}"></span>`).join('')).join('')}</div>
+    <div class="sm mut" style="margin-top:10px">${x}</div></div>`}).join('')}</div>
+ </div>`;
+
+V.terminales=()=>`<div class="head"><div><h1>Terminales y folios</h1><p>Cada taquilla tiene su propia serie de folios, así dos taquillas nunca emiten el mismo número.</p></div>
+  <button class="btn" data-act="toast" data-v="Serie creada y asignada a la taquilla">${ic('plus','s')}Nueva serie</button></div>
+ <div class="g g3" style="margin-bottom:18px">
+  ${[['Tapachula','Central de autobuses, 17 Ote.',3,96,'ok','Conectada'],['Huixtla','Av. Central Sur 12',2,58,'ok','Conectada'],['Pijijiapan','Carretera Costera km 4',1,21,'ok','Conectada'],['Arriaga','Calle 5 de Mayo 40',1,14,'warn','Reconectando'],['Tuxtla Gutiérrez','Terminal OCC, 5a Nte.',4,59,'ok','Conectada']].map(([n,d,t,v,k,e])=>`<div class="card"><div class="ch" style="margin-bottom:6px"><h3>${n}</h3><span class="chip ${k}"><span class="dot"></span>${e}</span></div>
+   <div class="sm mut" style="margin-bottom:12px">${ic('pin','s')} ${d}</div><div class="meta"><div><b>${t}</b>taquillas</div><div><b class="num">${v}</b>boletos hoy</div></div></div>`).join('')}
+ </div>
+ <div class="card"><div class="ch"><h2>Series de folios</h2></div>
+  <div class="scroll"><table><thead><tr><th>Terminal</th><th>Taquilla</th><th>Vendedor</th><th>Serie</th><th>Rango</th><th>Usados</th><th>Activa</th></tr></thead><tbody>
+  ${[['Tapachula','T-1','taquilla.tapachula','TAP-A',1,5000,3120],['Tapachula','T-2','m.lopez','TAP-B',1,5000,860],['Huixtla','H-1','taquilla.huixtla','HUX-A',1,5000,4413],['Pijijiapan','P-1','r.santos','PIJ-A',1,3000,712],['Tuxtla Gutiérrez','X-1','a.mendez','TUX-A',1,5000,2290]].map(([t,q,v,s,a,b,u])=>`<tr><td>${t}</td><td>${q}</td><td>${v}</td><td><span class="chip info">${s}</span></td><td class="num">${String(a).padStart(5,'0')}–${String(b).padStart(5,'0')}</td><td style="min-width:140px"><div class="bar"><i style="width:${u/b*100}%;${u/b>.85?'background:var(--acc)':''}"></i></div><span class="sm mut num">${u.toLocaleString('es-MX')} de ${b.toLocaleString('es-MX')}</span></td><td>${sw(true,'Serie '+s+' activa')}</td></tr>`).join('')}</tbody></table></div>
+  <p class="sm mut" style="margin-top:12px">${ic('alert','s')} La serie HUX-A va arriba del 85%: conviene asignar una nueva.</p></div>`;
+
+V.personal=()=>{
+  const ppl=[['Ricardo Velázquez','Conductor','Tapachula','LFC-0091827','2027-08-14','ok'],['Miguel Ochoa','Conductor','Tapachula','LFC-0102236','2026-11-02','warn'],['Pablo Luna','Conductor','Huixtla','LFC-0077120','2026-09-30','bad'],['Julián Castillo','Conductor','Tuxtla Gutiérrez','LFC-0110459','2028-01-20','ok'],['Michelle Constantino','Taquillero','Huixtla','—','',''],['Ramón Santos','Taquillero','Pijijiapan','—','',''],['Ángel Hernández','Despachador','Tuxtla Gutiérrez','—','',''],['Fernando Cruz','Mecánico','Taller','—','','']];
+  const f=S.pf||'Todos',lic={ok:'Vigente',warn:'Vence pronto',bad:'Vencida'};
+  return `<div class="head"><div><h1>Personal</h1><p>Conductores, taquilleros, despachadores y mecánicos.</p></div></div>
+  <div class="card" style="margin-bottom:18px"><div class="ch"><h2>Registrar personal</h2></div>
+   <div class="row" style="margin-bottom:14px"><div class="field"><label>Nombre(s)</label><input class="in"></div><div class="field"><label>Apellidos</label><input class="in"></div><div class="field"><label>CURP</label><input class="in" placeholder="18 caracteres"></div><div class="field"><label>Teléfono</label><input class="in" type="tel" placeholder="10 dígitos"></div></div>
+   <div class="row" style="align-items:flex-end"><div class="field"><label>Puesto</label><select class="in"><option>Conductor</option><option>Taquillero</option><option>Despachador</option><option>Mecánico</option></select></div><div class="field"><label>Terminal</label><select class="in">${stops.map(s=>`<option>${s}</option>`).join('')}</select></div>
+    <div class="field"><label>Licencia federal</label><input class="in" placeholder="Solo conductores"></div><div class="field"><label>Vigencia de licencia</label><input class="in" type="date"></div>
+    <button class="btn" style="flex:0 0 auto" data-act="toast" data-v="Personal registrado">${ic('plus','s')}Guardar</button></div></div>
+  <div class="card"><div class="row" style="margin-bottom:14px;align-items:center"><div class="tabs" style="flex:2">${['Todos','Conductor','Taquillero','Despachador','Mecánico'].map(t=>`<button class="tab ${f===t?'on':''}" data-act="pf" data-v="${t}">${t}</button>`).join('')}</div></div>
+   <div class="scroll"><table><thead><tr><th>Nombre</th><th>Puesto</th><th>Terminal</th><th>Licencia</th><th>Vigencia</th><th>Activo</th></tr></thead><tbody>
+   ${ppl.filter(p=>f==='Todos'||p[1]===f).map(([n,p,t,l,v,k])=>`<tr><td><div style="display:flex;gap:10px;align-items:center"><div class="av" style="width:32px;height:32px;font-size:13px">${n[0]}</div><b>${n}</b></div></td><td><span class="chip ${p==='Conductor'?'info':''}">${p}</span></td><td>${t}</td><td class="num">${l}</td><td>${k?`<span class="chip ${k}">${lic[k]} · ${v.split('-').reverse().join('/')}</span>`:'<span class="mut">—</span>'}</td><td>${sw(k!=='bad','Activo '+n)}</td></tr>`).join('')}</tbody></table></div>
+   <p class="sm mut" style="margin-top:12px">${ic('shield','s')} Un conductor con licencia vencida no puede asignarse a un viaje.</p></div>`;
+};
+
+V.reportes=()=>{
+  const rr=[['Tapachula → Tuxtla',148200],['Huixtla → Tuxtla',71350],['Tapachula → Arriaga',46900],['Pijijiapan → Tuxtla',31960]],mr=rr[0][1];
+  const tr=[['Tapachula → Tuxtla',412],['Huixtla → Tuxtla',288],['Tapachula → Huixtla',251],['Pijijiapan → Tuxtla',176],['Arriaga → Tuxtla',133]],mt=tr[0][1];
+  const dias=[['L',68],['M',61],['M',64],['J',70],['V',88],['S',93],['D',79]];
+  return `<div class="head"><div><h1>Reportes</h1><p>Ventas y ocupación del periodo elegido.</p></div>
+   <div style="display:flex;gap:10px"><button class="btn ghost" data-act="toast" data-v="Reporte exportado a CSV">${ic('down','s')}CSV</button><button class="btn ghost" data-act="toast" data-v="Reporte exportado a PDF">${ic('down','s')}PDF</button></div></div>
+  <div class="card" style="margin-bottom:18px"><div class="row" style="align-items:flex-end">
+   <div class="field"><label>Desde</label><input class="in" type="date" value="2026-10-19"></div><div class="field"><label>Hasta</label><input class="in" type="date" value="2026-10-25"></div>
+   <div class="field"><label>Ruta</label><select class="in"><option>Todas</option>${rutas.map(r=>`<option>${r[0]}</option>`).join('')}</select></div>
+   <div class="field"><label>Taquilla</label><select class="in"><option>Todas</option>${stops.map(s=>`<option>${s}</option>`).join('')}</select></div>
+   <button class="btn" style="flex:0 0 auto" data-act="toast" data-v="Reporte actualizado">${ic('search','s')}Consultar</button></div></div>
+  <div class="g g4" style="margin-bottom:18px">
+   ${[['ticket','Boletos','1,734','semana'],['trend','Ingresos','$298,410','semana'],['bus','Ocupación media','74%','42 viajes'],['x','Cancelados','2.1%','37 boletos']].map(([i,t,v,s])=>`<div class="card kpi"><div class="t"><span class="ib">${ic(i)}</span>${t}</div><div class="v num">${v}</div><div class="sm mut">${s}</div></div>`).join('')}</div>
+  <div class="g g2" style="margin-bottom:18px">
+   <div class="card"><div class="ch"><h2>Ingresos por ruta</h2></div>${rr.map(([n,v])=>`<div class="hb"><span>${n}</span><div class="bar"><i style="width:${v/mr*100}%"></i></div><b class="num" style="text-align:right">${money(Math.round(v/1000))}k</b></div>`).join('')}</div>
+   <div class="card"><div class="ch"><h2>Ocupación por día</h2><span class="chip info">%</span></div>
+    <svg viewBox="0 0 360 170" style="width:100%" role="img" aria-label="Ocupación por día, más alta el sábado con 93%">
+    ${dias.map(([d,v],i)=>{const h=v*1.3,x=16+i*49;return `<rect x="${x}" y="${140-h}" width="30" height="${h}" rx="6" fill="${v===93?'var(--acc)':'var(--pri-2)'}" opacity="${v===93?1:.75}"/><text x="${x+15}" y="${134-h}" text-anchor="middle" font-size="11" fill="var(--mut)">${v}</text><text x="${x+15}" y="160" text-anchor="middle" font-size="11" fill="var(--mut)">${d}</text>`}).join('')}</svg></div></div>
+  <div class="g g2">
+   <div class="card"><div class="ch"><h2>Tramos más vendidos</h2></div>${tr.map(([n,v])=>`<div class="hb"><span>${n}</span><div class="bar"><i style="width:${v/mt*100}%;background:var(--acc)"></i></div><b class="num" style="text-align:right">${v}</b></div>`).join('')}</div>
+   <div class="card"><div class="ch"><h2>Ventas por taquilla</h2></div><div class="scroll"><table><thead><tr><th>Taquilla</th><th>Boletos</th><th>Ingresos</th><th>Promedio</th></tr></thead><tbody>
+    ${[['Tapachula',612,118400],['Huixtla',441,71900],['Tuxtla Gutiérrez',398,73300],['Pijijiapan',172,22410],['Arriaga',111,12400]].map(([t,b,v])=>`<tr><td>${t}</td><td class="num">${b}</td><td class="num">${money(v)}</td><td class="num">${money(Math.round(v/b))}</td></tr>`).join('')}</tbody></table></div></div></div>`;
+};
+
+/* ---------- router ---------- */
+function render(){
+  let r=route();
+  const isLogin=r==='login';
+  $('#login').hidden=!isLogin;$('#app').hidden=isLogin;
+  if(isLogin){$('#login').innerHTML=V.login();return}
+  const allowed=nav.filter(n=>n[3].includes(S.role)).map(n=>n[0]).concat(['boleto']);
+  if(!V[r]||!allowed.includes(r)){r='dashboard';history.replaceState(null,'','#dashboard')}
+  $('#nav').innerHTML=nav.filter(n=>n[3].includes(S.role)).map(([id,i,l,,g],k,a)=>(k===0||a[k-1][4]!==g?`<div class="nav-l">${g}</div>`:'')+`<a data-act="go" data-v="${id}" class="${r===id||(r==='boleto'&&id==='venta')?'on':''}" ${r===id?'aria-current="page"':''}>${ic(i)}<span>${l}</span></a>`).join('');
+  $('#urole').textContent=roles[S.role][0];
+  $('#view').innerHTML='<div class="view">'+V[r]()+'</div>';
+  document.title=titles[r]+' · Zaca';
+  window.scrollTo(0,0);
+}
+function enter(){location.hash='#dashboard'}
+addEventListener('hashchange',render);
+
+/* ---------- eventos ---------- */
+document.addEventListener('click',e=>{
+  const a=e.target.closest('[data-act]');if(!a)return;const v=a.dataset.v;
+  switch(a.dataset.act){
+    case'go':location.hash='#'+v;break;
+    case'role':S.role=v;render();break;
+    case'theme':setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');break;
+    case'toast':toast(v);break;case'toastbad':toast(v,'bad');break;
+    case'swap':{[S.from,S.to]=[S.to,S.from];if(S.from>=S.to){S.from=0;S.to=4}render();break}
+    case'find':{const f=+$('#bo').value,t=+$('#bd').value;if(f>=t)return toast('El destino debe estar después del origen','bad');S.from=f;S.to=t;render();break}
+    case'stop':{const i=+v;if(i<S.from)S.from=i;else if(i>S.from)S.to=i;else break;S.sel=S.sel.filter(n=>!occ(n,S.from,S.to)&&!res(n,S.from,S.to));render();break}
+    case'seat':{const n=+v;S.sel=S.sel.includes(n)?S.sel.filter(x=>x!==n):[...S.sel,n].slice(-4);render();break}
+    case'confirm':{S.last={seats:[...S.sel],from:S.from,to:S.to,total:price()*S.sel.length,name:S.pass.name,folio:String(413+Math.floor(Math.random()*50)).padStart(5,'0')};S.sel=[];S.pass={};location.hash='#boleto';break}
+    case'filter':S.filter=v;render();break;
+    case'ruta':S.ruta=+v;render();break;
+    case'pf':S.pf=v;render();break;
+    case'sw':a.setAttribute('aria-checked',a.getAttribute('aria-checked')!=='true');break;
+  }
+});
+document.addEventListener('input',e=>{const f=e.target.dataset.f;if(!f)return;if(f==='tipo'){S.tipo=+e.target.value;render()}else S.pass[f]=e.target.value});
+
+function setTheme(t){document.documentElement.dataset.theme=t;try{localStorage.setItem('zaca-theme',t)}catch(_){}const u=$('#themeic use');if(u)u.setAttribute('href',t==='dark'?'#i-sun':'#i-moon')}
+let saved=null;try{saved=localStorage.getItem('zaca-theme')}catch(_){}
+setTheme(saved||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'));
+render();
+</script>
+</body>
+</html>

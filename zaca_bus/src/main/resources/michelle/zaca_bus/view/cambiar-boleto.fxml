@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<StackPane styleClass="ventana-sombra" fx:controller="michelle.zaca_bus.controller.VistaController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+    <VBox styleClass="ventana" prefWidth="560" maxWidth="560" maxHeight="-Infinity">
+        <HBox styleClass="ventana-titulo" alignment="CENTER_LEFT">
+            <Label text="Cambiar boleto" styleClass="ventana-titulo-texto"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="×" styleClass="boton, cerrar-x" onAction="#cerrar"/>
+        </HBox>
+        <VBox styleClass="ventana-cuerpo" spacing="16">
+            <Label text="Se abrirá la venta con el mismo viaje, titular y asientos del boleto para ajustarlos. Al confirmar, ese folio se cancela y se emite uno nuevo: devuelva el total anterior y cobre el boleto nuevo. Si no se confirma, el boleto sigue vigente." styleClass="texto" wrapText="true"/>
+        </VBox>
+        <HBox styleClass="ventana-pie" spacing="10" alignment="CENTER_RIGHT">
+            <Button text="No, regresar" styleClass="boton, boton-secundario" onAction="#cerrar"/>
+            <Button text="Continuar al cambio" styleClass="boton, boton-primario" onAction="#irA" id="venta"/>
+        </HBox>
+    </VBox>
+</StackPane>

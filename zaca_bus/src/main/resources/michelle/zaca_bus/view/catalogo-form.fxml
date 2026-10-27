@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<!-- Alta rápida genérica para un catálogo simple (ciudad, tipo de bus, acomodo…). -->
+<StackPane styleClass="ventana-sombra" fx:controller="michelle.zaca_bus.controller.CatalogoController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+    <VBox styleClass="ventana" prefWidth="460" maxWidth="460" maxHeight="-Infinity">
+        <HBox styleClass="ventana-titulo" alignment="CENTER_LEFT">
+            <Label fx:id="lblTitulo" styleClass="ventana-titulo-texto"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="×" styleClass="boton, cerrar-x" onAction="#cerrar"/>
+        </HBox>
+        <VBox styleClass="ventana-cuerpo" spacing="16">
+            <VBox spacing="6" styleClass="campo">
+                <Label fx:id="lblEtiqueta" styleClass="campo-etiqueta"/>
+                <TextField fx:id="txtNombre" styleClass="text-field, text-input"/>
+            </VBox>
+            <VBox fx:id="boxExtra" spacing="6" styleClass="campo" visible="false" managed="false">
+                <Label fx:id="lblEtiquetaExtra" styleClass="campo-etiqueta"/>
+                <TextField fx:id="txtExtra" styleClass="text-field, text-input"/>
+            </VBox>
+            <Label fx:id="lblError" styleClass="alerta, alerta-error" maxWidth="Infinity" wrapText="true" visible="false" managed="false"/>
+        </VBox>
+        <HBox styleClass="ventana-pie" spacing="10" alignment="CENTER_RIGHT">
+            <Button text="Cancelar" styleClass="boton, boton-secundario" onAction="#cerrar"/>
+            <Button fx:id="btnGuardar" styleClass="boton, boton-primario" onAction="#guardar"/>
+        </HBox>
+    </VBox>
+</StackPane>

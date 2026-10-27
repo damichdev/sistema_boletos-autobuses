@@ -1,0 +1,65 @@
+-- VERSION 7
+
+ALTER TABLE administracion.personal_app
+ADD COLUMN id_terminal INT,
+ADD CONSTRAINT fk_terminal_app FOREIGN KEY (id_terminal) REFERENCES administracion.terminal(id_terminal) ON DELETE RESTRICT;
+
+-- /////////////////////////////////////////////////////////////////////////////////
+
+-- SINCRONIZACION TABLAS CATALOGO 
+
+SELECT setval(pg_get_serial_sequence('administracion.estado_conexion', 'id_conexion'), (SELECT MAX(id_conexion) FROM administracion.estado_conexion));
+SELECT setval(pg_get_serial_sequence('administracion.puesto', 'id_puesto'), (SELECT MAX(id_puesto) FROM administracion.puesto));
+SELECT setval(pg_get_serial_sequence('administracion.rol', 'id_rol'), (SELECT MAX(id_rol) FROM administracion.rol));
+SELECT setval(pg_get_serial_sequence('viajes.nombre_tipo_bus', 'id_nombre_tipo_bus'), (SELECT MAX(id_nombre_tipo_bus) FROM viajes.nombre_tipo_bus));
+SELECT setval(pg_get_serial_sequence('viajes.layout', 'id_layout'), (SELECT MAX(id_layout) FROM viajes.layout));
+SELECT setval(pg_get_serial_sequence('viajes.tipo_servicio', 'id_servicio'), (SELECT MAX(id_servicio) FROM viajes.tipo_servicio));
+SELECT setval(pg_get_serial_sequence('viajes.estado_viaje', 'id_estado_viaje'), (SELECT MAX(id_estado_viaje) FROM viajes.estado_viaje));
+SELECT setval(pg_get_serial_sequence('ventas.estado_boleto', 'id_estado_boleto'), (SELECT MAX(id_estado_boleto) FROM ventas.estado_boleto));
+SELECT setval(pg_get_serial_sequence('ventas.tarifa', 'id_tarifa'), (SELECT MAX(id_tarifa) FROM ventas.tarifa));
+
+-- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+-- VISTAS
+
+
+
+CREATE OR REPLACE FUNCTION ventas.fn_preparar_boleto()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_id_ruta INT;
+    v_capacidad_bus INT;
+    v_orden_origen INT;
+    v_orden_destino INT;
+BEGIN
+    SELECT vp.id_ruta, tb.capacidad INTO v_id_ruta, v_capacidad_bus
+    FROM viajes.viaje_programado vp
+    INNER JOIN viajes.unidad u ON vp.id_unidad = u.id_unidad
+    INNER JOIN viajes.tipo_bus tb ON tb.id_tipo_bus = u.id_tipo_bus
+    WHERE vp.id_viaje = NEW.id_viaje;
+    IF NEW.num_asiento > v_capacidad_bus THEN
+        RAISE EXCEPTION 'El asiento % no existe, esta unidad solo tiene capacidad para % pasajeros a bordo.', NEW.num_asiento, v_capacidad_bus USING ERRCODE = 'Z0013';
+    END IF;   
+    SELECT orden INTO v_orden_origen
+    FROM viajes.ruta_paradas
+    WHERE id_ruta = v_id_ruta AND id_terminal = NEW.id_terminal_origen;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'La terminal de origen seleccionada no pertenece a la ruta de este viaje.' USING ERRCODE = 'Z0014';
+    END IF;
+    SELECT orden INTO v_orden_destino
+    FROM viajes.ruta_paradas
+    WHERE id_ruta = v_id_ruta AND id_terminal = NEW.id_terminal_destino;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'La terminal de destino seleccionada no pertenece a la ruta de este viaje.' USING ERRCODE = 'Z0015';
+    END IF;
+    IF v_orden_origen >= v_orden_destino THEN
+        RAISE EXCEPTION 'El destino del pasajero debe ser despues del punto de origen.' USING ERRCODE = 'Z0016';
+    END IF;
+    NEW.tramo_ocupacion := int4range(v_orden_origen, v_orden_destino, '[)');
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+-- //////////////////////////////////////////////////////////////////////////////////////////////

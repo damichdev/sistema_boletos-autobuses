@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane styleClass="pagina" fx:controller="michelle.zaca_bus.controller.VistaController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+    <left>
+        <fx:include source="barra-taquillero.fxml"/>
+    </left>
+    <center>
+        <ScrollPane fitToWidth="true" styleClass="pagina-scroll">
+            <VBox styleClass="contenido" spacing="20">
+                <HBox alignment="CENTER_LEFT" spacing="12">
+                    <VBox spacing="2">
+                        <Label text="Abrir turno" styleClass="titulo-pagina"/>
+                        <Label text="Elija una ventanilla activa de su sede que no esté ocupada. Sin turno no puede vender ni cancelar." styleClass="texto-sec"/>
+                    </VBox>
+                    <Region HBox.hgrow="ALWAYS"/>
+                </HBox>
+                <FlowPane hgap="20" vgap="20" prefHeight="200"/>
+                <Label text="No hay ventanillas disponibles." styleClass="tabla-vacia"/>
+            </VBox>
+        </ScrollPane>
+    </center>
+</BorderPane>
