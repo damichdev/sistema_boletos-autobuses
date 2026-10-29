@@ -3,7 +3,7 @@ import { fechaLocal } from './logica.js';
 
 const CLAVE = 'zaca';
 // Subir VERSION cuando cambie la forma de la semilla, para que los navegadores con datos viejos se vuelvan a sembrar.
-const VERSION = 4;
+const VERSION = 7;
 
 // Los viajes de ejemplo dependen de la hora en que se sembraron, así que se vuelven a sembrar cada día.
 export function cargar() {

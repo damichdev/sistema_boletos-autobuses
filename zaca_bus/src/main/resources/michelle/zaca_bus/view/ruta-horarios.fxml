@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<!-- Horas de salida oficiales de una ruta. El despachador solo puede programar salidas en estas horas. -->
+<StackPane styleClass="ventana-sombra" fx:controller="michelle.zaca_bus.controller.admin_controller.HorariosRutaController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+    <VBox styleClass="ventana" prefWidth="420" maxWidth="420" maxHeight="-Infinity">
+        <HBox styleClass="ventana-titulo" alignment="CENTER_LEFT">
+            <Label fx:id="lblTitulo" text="Horarios de la ruta" styleClass="ventana-titulo-texto"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="×" styleClass="boton, cerrar-x" onAction="#cerrar"/>
+        </HBox>
+        <VBox styleClass="ventana-cuerpo" spacing="16">
+            <VBox spacing="6" styleClass="campo">
+                <Label text="NUEVO HORARIO" styleClass="campo-etiqueta"/>
+                <HBox spacing="10">
+                    <TextField fx:id="txtHora" promptText="hh:mm" styleClass="text-field, text-input, mono" HBox.hgrow="ALWAYS" onAction="#agregar"/>
+                    <Button text="Agregar" styleClass="boton, boton-primario" onAction="#agregar"/>
+                </HBox>
+            </VBox>
+            <VBox spacing="6" styleClass="campo">
+                <Label text="HORARIOS DE LA RUTA" styleClass="campo-etiqueta"/>
+                <ListView fx:id="lstHorarios" styleClass="lista-personas" prefHeight="220" minHeight="220">
+                    <placeholder>
+                        <Label text="Esta ruta aún no tiene horarios." styleClass="tabla-vacia"/>
+                    </placeholder>
+                </ListView>
+            </VBox>
+            <Label fx:id="lblError" styleClass="alerta, alerta-error" maxWidth="Infinity" wrapText="true" visible="false" managed="false"/>
+        </VBox>
+        <HBox styleClass="ventana-pie" spacing="10" alignment="CENTER_RIGHT">
+            <Button text="Quitar seleccionado" styleClass="boton, boton-peligro" onAction="#quitar"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="Cerrar" styleClass="boton, boton-secundario" onAction="#cerrar"/>
+        </HBox>
+    </VBox>
+</StackPane>

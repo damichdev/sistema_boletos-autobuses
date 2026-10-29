@@ -8,7 +8,7 @@
 <?import javafx.scene.layout.VBox?>
 
 <!-- Confirmación para eliminar a un empleado. -->
-<StackPane styleClass="ventana-sombra" fx:controller="michelle.zaca_bus.controller.PersonalController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+<StackPane styleClass="ventana-sombra" fx:controller="michelle.zaca_bus.controller.admin_controller.PersonalController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
     <VBox styleClass="ventana" prefWidth="520" maxWidth="520" maxHeight="-Infinity">
         <HBox styleClass="ventana-titulo" alignment="CENTER_LEFT">
             <Label text="Eliminar empleado" styleClass="ventana-titulo-texto"/>

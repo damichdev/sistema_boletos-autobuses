@@ -13,7 +13,7 @@
 <?import javafx.scene.layout.VBox?>
 
 <!-- Ventana de alta y edición de empleados. Licencia y vigencia solo se habilitan para choferes. -->
-<StackPane styleClass="ventana-sombra" fx:controller="michelle.zaca_bus.controller.PersonalController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+<StackPane styleClass="ventana-sombra" fx:controller="michelle.zaca_bus.controller.admin_controller.PersonalController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
     <VBox styleClass="ventana" prefWidth="660" maxWidth="660" maxHeight="-Infinity">
         <HBox styleClass="ventana-titulo" alignment="CENTER_LEFT">
             <Label fx:id="lblTitulo" text="Nuevo empleado" styleClass="ventana-titulo-texto"/>

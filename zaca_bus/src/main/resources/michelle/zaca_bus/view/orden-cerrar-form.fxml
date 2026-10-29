@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<!-- Ventana para cerrar una orden abierta: fecha de salida, estado final del bus y costo definitivo. -->
+<StackPane styleClass="ventana-sombra" fx:controller="michelle.zaca_bus.controller.VistaController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+    <VBox styleClass="ventana" prefWidth="620" maxWidth="620" maxHeight="-Infinity">
+        <HBox styleClass="ventana-titulo" alignment="CENTER_LEFT">
+            <Label fx:id="lblTitulo" text="Cerrar orden de taller" styleClass="ventana-titulo-texto"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="×" styleClass="boton, cerrar-x" onAction="#cerrar"/>
+        </HBox>
+        <VBox styleClass="ventana-cuerpo" spacing="16">
+            <GridPane hgap="14" vgap="14">
+                <columnConstraints>
+                    <ColumnConstraints percentWidth="50.0" hgrow="ALWAYS"/>
+                    <ColumnConstraints percentWidth="50.0" hgrow="ALWAYS"/>
+                </columnConstraints>
+                <VBox spacing="2" styleClass="dato" GridPane.columnIndex="0" GridPane.rowIndex="0" GridPane.columnSpan="2">
+                    <Label fx:id="lblOrden" text="Orden" styleClass="dato-valor"/>
+                    <Label fx:id="lblIngreso" text="" styleClass="texto-sec"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                    <Label text="FECHA DE SALIDA" styleClass="campo-etiqueta"/>
+                    <DatePicker fx:id="dpSalida" promptText="aaaa-mm-dd" maxWidth="Infinity"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                    <Label text="HORA DE SALIDA" styleClass="campo-etiqueta"/>
+                    <TextField fx:id="txtHoraSalida" promptText="hh:mm" styleClass="text-field, text-input, mono"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="2">
+                    <Label text="ESTADO DEL BUS AL SALIR" styleClass="campo-etiqueta"/>
+                    <ComboBox fx:id="cbEstadoFinal" promptText="Operativo / de baja" maxWidth="Infinity"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                    <Label text="COSTO FINAL ($)" styleClass="campo-etiqueta"/>
+                    <TextField fx:id="txtCosto" promptText="Costo final" styleClass="text-field, text-input, mono"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="3" GridPane.columnSpan="2">
+                    <Label text="DIAGNÓSTICO FINAL" styleClass="campo-etiqueta"/>
+                    <TextField fx:id="txtDiagnostico" promptText="Diagnóstico final" styleClass="text-field, text-input"/>
+                </VBox>
+            </GridPane>
+            <Label fx:id="lblError" styleClass="alerta, alerta-error" maxWidth="Infinity" wrapText="true" visible="false" managed="false"/>
+        </VBox>
+        <HBox styleClass="ventana-pie" spacing="10" alignment="CENTER_RIGHT">
+            <Button text="Cancelar" styleClass="boton, boton-secundario" onAction="#cerrar"/>
+            <Button text="Cerrar orden" styleClass="boton, boton-primario" onAction="#cerrar"/>
+        </HBox>
+    </VBox>
+</StackPane>

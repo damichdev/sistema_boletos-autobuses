@@ -11,7 +11,7 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane styleClass="pagina" fx:controller="michelle.zaca_bus.controller.CuentasController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane styleClass="pagina" fx:controller="michelle.zaca_bus.controller.admin_controller.CuentasController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
     <left>
         <fx:include source="barra-administrador.fxml"/>
     </left>

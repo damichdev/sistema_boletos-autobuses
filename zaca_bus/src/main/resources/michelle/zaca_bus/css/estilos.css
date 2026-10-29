@@ -134,6 +134,9 @@
 .tabla .table-row-cell:empty { -fx-background-color: transparent; -fx-border-color: transparent; }
 .tabla .table-row-cell:selected { -fx-background-color: -color-accion-suave; }
 .tabla .table-cell { -fx-padding: 0 16 0 16; -fx-alignment: CENTER_LEFT; }
+/* Las tablas no muestran barras de desplazamiento; con la rueda del mouse siguen desplazándose. */
+.tabla .scroll-bar { -fx-opacity: 0; -fx-pref-width: 0; -fx-pref-height: 0; -fx-max-width: 0; -fx-max-height: 0; -fx-padding: 0; }
+.tabla .scroll-bar .thumb, .tabla .scroll-bar .track, .tabla .scroll-bar .increment-button, .tabla .scroll-bar .decrement-button { -fx-padding: 0; -fx-pref-width: 0; -fx-pref-height: 0; -fx-background-color: transparent; }
 .tabla-vacia { -fx-text-fill: -color-texto-2; -fx-padding: 36; }
 .chip { -fx-font-size: 12.5px; -fx-font-weight: bold; -fx-padding: 3 10 3 10; -fx-background-radius: 999; }
 .chip-ok { -fx-background-color: -color-ok-bg; -fx-text-fill: -color-ok; }
@@ -232,6 +235,7 @@
 
 /* ---------- Personal ---------- */
 .persona-nombre { -fx-font-weight: bold; }
+.fila-taquilla { -fx-padding: 10 12 10 12; -fx-background-color: -color-tarjeta; -fx-border-color: -color-linea; -fx-border-radius: 8; -fx-background-radius: 8; }
 .lista-personas { -fx-background-color: transparent; -fx-border-color: transparent; }
 .lista-personas .list-cell { -fx-padding: 10 0 10 0; -fx-background-color: transparent; -fx-border-color: transparent transparent -color-linea transparent; }
 

@@ -1,0 +1,741 @@
+-- TERMINAL DAO
+
+CREATE OR REPLACE VIEW ventas.v_boletos_abordaje AS
+SELECT 
+b.id_boleto, 
+b.id_viaje, 
+b.num_asiento, 
+eb.nombre_estado_boleto AS estado_boleto,
+upper(q.serie_folio || '-' || lpad(v.folio::text, 6, '0')) AS folio_impreso
+FROM ventas.boleto b
+INNER JOIN ventas.venta v ON v.id_venta = b.id_venta
+INNER JOIN administracion.taquilla q ON q.id_taquilla = v.id_taquilla
+INNER JOIN ventas.estado_boleto eb ON eb.id_estado_boleto = b.id_estado_boleto;
+
+
+CREATE OR REPLACE FUNCTION ventas.fn_buscar_boletos_por_folio(p_folio TEXT)
+RETURNS TABLE (
+id_boleto INT,
+id_viaje INT,
+num_asiento INT,
+estado_boleto TEXT
+) 
+LANGUAGE sql
+AS $$
+SELECT 
+v.id_boleto, 
+v.id_viaje, 
+v.num_asiento, 
+v.estado_boleto::TEXT
+FROM ventas.v_boletos_abordaje v
+WHERE v.folio_impreso = upper(p_folio)
+ORDER BY v.num_asiento;
+$$;
+
+
+CREATE OR REPLACE PROCEDURE ventas.sp_marcar_abordado(p_id_boleto INT)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+UPDATE ventas.boleto 
+SET id_estado_boleto = (SELECT id_estado_boleto FROM ventas.estado_boleto WHERE nombre_estado_boleto = 'ABORDADO')
+WHERE id_boleto = p_id_boleto;
+END;
+$$;
+
+
+-- /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+-- CUENTA DAO
+
+CREATE OR REPLACE VIEW administracion.v_roles AS
+SELECT id_rol, nombre_rol 
+FROM administracion.rol 
+ORDER BY id_rol;
+
+
+CREATE OR REPLACE VIEW administracion.v_cuentas AS
+SELECT 
+pa.id_app, 
+pa.id_personal, 
+pa.username,
+p.nombre_personal || ' ' || p.ap_paterno || COALESCE(' ' || p.ap_materno, '') AS nombre_completo,
+r.id_rol, 
+r.nombre_rol, 
+t.id_terminal, 
+t.nombre_terminal, 
+q.id_taquilla, 
+q.identificador, 
+pa.activo
+FROM administracion.personal_app pa
+INNER JOIN administracion.personal p ON p.id_personal = pa.id_personal
+INNER JOIN administracion.rol r ON r.id_rol = pa.id_rol
+LEFT JOIN administracion.terminal t ON t.id_terminal = pa.id_terminal
+LEFT JOIN administracion.taquilla q ON q.id_taquilla = pa.id_taquilla
+ORDER BY pa.username;
+
+
+CREATE OR REPLACE PROCEDURE administracion.sp_guardar_cuenta(
+p_id_app INT,
+p_id_personal INT,
+p_id_rol INT,
+p_id_terminal INT,
+p_id_taquilla INT,
+p_username TEXT,
+p_password_hash TEXT,
+p_activo BOOLEAN
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+IF p_id_app = 0 THEN
+INSERT INTO administracion.personal_app (id_personal, id_rol, id_terminal, id_taquilla, username, password_hash, activo)
+VALUES (p_id_personal, p_id_rol, p_id_terminal, p_id_taquilla, p_username, p_password_hash, p_activo);
+ELSE
+UPDATE administracion.personal_app 
+SET id_rol = p_id_rol,
+id_terminal = p_id_terminal,
+id_taquilla = p_id_taquilla,
+activo = p_activo
+WHERE id_app = p_id_app;
+IF p_password_hash IS NOT NULL THEN
+UPDATE administracion.personal_app 
+SET password_hash = p_password_hash 
+WHERE id_app = p_id_app;
+END IF;
+END IF;
+END;
+$$;
+
+
+CREATE OR REPLACE PROCEDURE administracion.sp_cambiar_estado_cuenta(
+p_id_app INT,
+p_activa BOOLEAN
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+UPDATE administracion.personal_app 
+SET activo = p_activa 
+WHERE id_app = p_id_app;
+END;
+$$;
+
+
+-- ///////////////////////////////////////////////////////////////////////////////////////
+
+-- MANIFIESTO DAO
+
+CREATE OR REPLACE FUNCTION viajes.fn_obtener_escalas(p_id_ruta INT)
+RETURNS TABLE (
+id_terminal INT, 
+nombre_terminal TEXT, 
+min_desde_origen INT
+) 
+LANGUAGE sql
+AS $$
+SELECT t.id_terminal, t.nombre_terminal, rp.min_desde_origen
+FROM viajes.ruta_paradas rp
+INNER JOIN administracion.terminal t ON t.id_terminal = rp.id_terminal
+WHERE rp.id_ruta = p_id_ruta 
+AND rp.orden < (SELECT max(orden) FROM viajes.ruta_paradas WHERE id_ruta = p_id_ruta)
+ORDER BY rp.orden;
+$$;
+
+
+CREATE OR REPLACE VIEW ventas.v_manifiesto_detallado AS
+SELECT 
+b.id_viaje,
+b.id_terminal_origen,
+b.num_asiento, 
+p.nombre_pasajero || ' ' || p.ap_paterno || COALESCE(' ' || p.ap_materno, '') AS nombre_completo, 
+td.nombre_terminal AS destino,
+tar.nombre_tarifa, 
+upper(q.serie_folio || '-' || lpad(v.folio::text, 6, '0')) AS folio_impreso,
+CASE 
+WHEN eb.nombre_estado_boleto = 'ABORDADO' THEN 'Abordó'
+WHEN ev.nombre_estado_viaje IN ('EN RUTA', 'CERRADO')
+AND vp.fecha_salida + make_interval(mins => rp.min_desde_origen) <= now() THEN 'No se presentó'
+ELSE 'Pendiente' 
+END AS estatus_abordaje,
+eb.nombre_estado_boleto
+FROM ventas.boleto b
+INNER JOIN ventas.venta v ON v.id_venta = b.id_venta
+INNER JOIN ventas.pasajero p ON p.id_pasajero = v.id_titular
+INNER JOIN administracion.taquilla q ON q.id_taquilla = v.id_taquilla
+INNER JOIN administracion.terminal td ON td.id_terminal = b.id_terminal_destino
+INNER JOIN ventas.tarifa tar ON tar.id_tarifa = b.id_tarifa
+INNER JOIN ventas.estado_boleto eb ON eb.id_estado_boleto = b.id_estado_boleto
+INNER JOIN viajes.viaje_programado vp ON vp.id_viaje = b.id_viaje
+INNER JOIN viajes.estado_viaje ev ON ev.id_estado_viaje = vp.id_estado_viaje
+INNER JOIN viajes.ruta_paradas rp ON rp.id_ruta = vp.id_ruta AND rp.id_terminal = b.id_terminal_origen;
+
+
+CREATE OR REPLACE FUNCTION ventas.fn_buscar_pasajeros_manifiesto(p_id_viaje INT, p_id_terminal INT)
+RETURNS TABLE (
+num_asiento INT, 
+nombre_completo TEXT, 
+destino TEXT, 
+nombre_tarifa TEXT, 
+folio_impreso TEXT, 
+estatus_abordaje TEXT
+) 
+LANGUAGE sql
+AS $$
+SELECT 
+v.num_asiento, 
+v.nombre_completo, 
+v.destino, 
+v.nombre_tarifa, 
+v.folio_impreso, 
+v.estatus_abordaje
+FROM ventas.v_manifiesto_detallado v
+WHERE v.id_viaje = p_id_viaje 
+AND v.id_terminal_origen = p_id_terminal 
+AND v.nombre_estado_boleto <> 'CANCELADO'
+ORDER BY v.num_asiento;
+$$;
+
+
+CREATE OR REPLACE PROCEDURE viajes.sp_marcar_viaje_en_ruta(p_id_viaje INT)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+UPDATE viajes.viaje_programado 
+SET id_estado_viaje = (SELECT id_estado_viaje FROM viajes.estado_viaje WHERE nombre_estado_viaje = 'EN RUTA') 
+WHERE id_viaje = p_id_viaje;
+END;
+$$;
+
+
+-- //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+-- PERSONAL DAO
+
+CREATE OR REPLACE VIEW administracion.v_puestos AS
+SELECT id_puesto, nombre_puesto 
+FROM administracion.puesto 
+ORDER BY id_puesto;
+
+
+CREATE OR REPLACE VIEW administracion.v_personal AS
+SELECT 
+p.id_personal, 
+pu.id_puesto, 
+pu.nombre_puesto, 
+p.nombre_personal, 
+p.ap_paterno, 
+p.ap_materno,
+p.curp, 
+p.telefono, 
+p.licencia, 
+p.vigencia,
+EXISTS (SELECT 1 FROM administracion.personal_app pa WHERE pa.id_personal = p.id_personal) AS tiene_cuenta
+FROM administracion.personal p
+INNER JOIN administracion.puesto pu ON pu.id_puesto = p.id_puesto
+ORDER BY p.ap_paterno, p.ap_materno, p.nombre_personal;
+
+
+CREATE OR REPLACE PROCEDURE administracion.sp_guardar_personal(
+    p_id_personal INT,
+    p_id_puesto INT,
+    p_nombre_personal TEXT,
+    p_ap_paterno TEXT,
+    p_ap_materno TEXT,
+    p_curp TEXT,
+    p_telefono TEXT,
+    p_licencia TEXT,
+    p_vigencia DATE
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF p_id_personal = 0 THEN
+        INSERT INTO administracion.personal 
+        (id_puesto, nombre_personal, ap_paterno, ap_materno, curp, telefono, licencia, vigencia)
+        VALUES 
+        (p_id_puesto, p_nombre_personal, p_ap_paterno, p_ap_materno, p_curp, p_telefono, p_licencia, p_vigencia);
+    ELSE
+        UPDATE administracion.personal 
+        SET id_puesto = p_id_puesto,
+            nombre_personal = p_nombre_personal,
+            ap_paterno = p_ap_paterno,
+            ap_materno = p_ap_materno,
+            curp = p_curp,
+            telefono = p_telefono,
+            licencia = p_licencia,
+            vigencia = p_vigencia
+        WHERE id_personal = p_id_personal;
+    END IF;
+END;
+$$;
+
+
+CREATE OR REPLACE PROCEDURE administracion.sp_eliminar_personal(p_id_personal INT)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+DELETE FROM administracion.personal WHERE id_personal = p_id_personal;
+END;
+$$;
+
+
+-- /////////////////////////////////////////////////////////////////////////////////////////////////////
+
+-- RUTA DAO
+
+CREATE OR REPLACE VIEW viajes.v_servicios AS
+SELECT id_servicio, nombre_servicio 
+FROM viajes.tipo_servicio 
+ORDER BY id_servicio;
+
+
+
+CREATE OR REPLACE VIEW viajes.v_ruta_paradas AS
+SELECT rp.id_ruta, t.id_terminal, t.nombre_terminal, rp.km_desde_origen, rp.min_desde_origen
+FROM viajes.ruta_paradas rp
+INNER JOIN administracion.terminal t ON t.id_terminal = rp.id_terminal
+ORDER BY rp.id_ruta, rp.orden;
+
+
+
+CREATE OR REPLACE VIEW viajes.v_precio_tramo AS
+SELECT id_ruta, orden_origen, orden_destino, precio
+FROM viajes.precio_tramo;
+
+
+
+CREATE OR REPLACE VIEW viajes.v_rutas AS
+SELECT r.id_ruta, r.nombre_ruta, s.id_servicio, s.nombre_servicio
+FROM viajes.ruta r
+INNER JOIN viajes.tipo_servicio s ON s.id_servicio = r.id_servicio
+ORDER BY r.nombre_ruta;
+
+
+
+CREATE OR REPLACE PROCEDURE viajes.sp_guardar_ruta(
+INOUT p_id_ruta INT, 
+p_id_servicio INT, 
+p_nombre_ruta TEXT
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+IF p_id_ruta = 0 THEN
+INSERT INTO viajes.ruta (id_servicio, nombre_ruta) 
+VALUES (p_id_servicio, p_nombre_ruta) 
+RETURNING id_ruta INTO p_id_ruta;
+ELSE
+UPDATE viajes.ruta 
+SET id_servicio = p_id_servicio, nombre_ruta = p_nombre_ruta 
+WHERE id_ruta = p_id_ruta;
+        DELETE FROM viajes.ruta_paradas WHERE id_ruta = p_id_ruta;
+    END IF;
+END;
+$$;
+
+
+
+CREATE OR REPLACE PROCEDURE viajes.sp_guardar_parada(
+p_id_ruta INT, p_id_terminal INT, p_orden INT, p_min INT, p_km INT
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+INSERT INTO viajes.ruta_paradas (id_ruta, id_terminal, orden, min_desde_origen, km_desde_origen)
+VALUES (p_id_ruta, p_id_terminal, p_orden, p_min, p_km);
+END;
+$$;
+
+
+
+CREATE OR REPLACE PROCEDURE viajes.sp_guardar_tramo(
+p_id_ruta INT, p_orden_origen INT, p_orden_destino INT, p_precio DECIMAL
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+INSERT INTO viajes.precio_tramo (id_ruta, orden_origen, orden_destino, precio)
+VALUES (p_id_ruta, p_orden_origen, p_orden_destino, p_precio);
+END;
+$$;
+
+
+
+-- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+-- NUEVOSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
+
+-- SALIDA DAO
+
+CREATE OR REPLACE VIEW viajes.v_catalogo_unidades AS
+SELECT 
+u.id_unidad,
+u.placa || ' - ' || u.modelo || ' - ' || tb.capacidad || ' asientos' AS descripcion_unidad
+FROM viajes.unidad u
+INNER JOIN viajes.tipo_bus tb ON tb.id_tipo_bus = u.id_tipo_bus
+ORDER BY u.placa;
+
+
+CREATE OR REPLACE VIEW administracion.v_choferes AS
+SELECT
+p.id_personal,
+p.nombre_personal || ' ' || p.ap_paterno || COALESCE(' ' || p.ap_materno, '') AS chofer
+FROM administracion.personal p
+INNER JOIN administracion.puesto pu ON pu.id_puesto = p.id_puesto
+WHERE nombre_puesto = 'CONDUCTOR'
+ORDER BY p.ap_paterno, p.ap_materno, p.nombre_personal;
+
+
+CREATE OR REPLACE VIEW viajes.v_salidas AS
+SELECT 
+    v.id_viaje, 
+    r.id_ruta, 
+    r.nombre_ruta, 
+    ts.nombre_servicio, 
+    v.fecha_salida, 
+    ev.nombre_estado_viaje,
+    u.placa, 
+    u.modelo, 
+    tb.capacidad,
+    p.nombre_personal || ' ' || p.ap_paterno || COALESCE(' ' || p.ap_materno, '') AS nombre_conductor, 
+    p.vigencia
+FROM viajes.viaje_programado v
+INNER JOIN viajes.ruta r ON r.id_ruta = v.id_ruta
+INNER JOIN viajes.tipo_servicio ts ON ts.id_servicio = r.id_servicio
+INNER JOIN viajes.estado_viaje ev ON ev.id_estado_viaje = v.id_estado_viaje
+INNER JOIN viajes.unidad u ON u.id_unidad = v.id_unidad
+INNER JOIN viajes.tipo_bus tb ON tb.id_tipo_bus = u.id_tipo_bus
+INNER JOIN administracion.personal p ON p.id_personal = v.id_conductor;
+
+
+CREATE OR REPLACE FUNCTION viajes.fn_buscar_salidas_por_dia(p_inicio TIMESTAMPTZ, p_fin TIMESTAMPTZ)
+RETURNS TABLE (
+id_viaje INT, id_ruta INT, nombre_ruta TEXT, nombre_servicio TEXT, 
+fecha_salida TIMESTAMPTZ, nombre_estado_viaje TEXT, 
+placa TEXT, modelo TEXT, capacidad INT, 
+nombre_conductor TEXT, vigencia DATE
+) 
+LANGUAGE sql
+AS $$
+SELECT * FROM viajes.v_salidas 
+WHERE fecha_salida >= p_inicio AND fecha_salida < p_fin
+ORDER BY fecha_salida;
+$$;
+
+
+
+CREATE OR REPLACE FUNCTION viajes.fn_obtener_recorrido_viaje(p_id_viaje INT, p_id_ruta INT)
+RETURNS TABLE (
+nombre_terminal TEXT, 
+min_desde_origen INT, 
+suben BIGINT, 
+bajan BIGINT, 
+ocupacion_en_tramo BIGINT
+) 
+LANGUAGE sql
+AS $$
+SELECT 
+t.nombre_terminal, 
+rp.min_desde_origen,
+(SELECT count(*) FROM ventas.boleto b WHERE b.id_viaje = p_id_viaje AND b.id_estado_boleto <> 4 AND b.id_terminal_origen = rp.id_terminal) AS suben,
+(SELECT count(*) FROM ventas.boleto b WHERE b.id_viaje = p_id_viaje AND b.id_estado_boleto <> 4 AND b.id_terminal_destino = rp.id_terminal) AS bajan,
+(SELECT count(*) FROM ventas.boleto b WHERE b.id_viaje = p_id_viaje AND b.id_estado_boleto <> 4 AND b.tramo_ocupacion @> rp.orden) AS ocupacion_en_tramo
+FROM viajes.ruta_paradas rp
+INNER JOIN administracion.terminal t ON t.id_terminal = rp.id_terminal
+WHERE rp.id_ruta = p_id_ruta
+ORDER BY rp.orden;
+$$;
+
+
+
+CREATE OR REPLACE PROCEDURE viajes.sp_programar_viaje(
+p_id_ruta INT, 
+p_id_unidad INT, 
+p_id_conductor INT, 
+p_fecha_salida TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+INSERT INTO viajes.viaje_programado (id_ruta, id_estado_viaje, id_unidad, id_conductor, fecha_salida)
+VALUES (
+p_id_ruta, 
+(SELECT id_estado_viaje FROM viajes.estado_viaje WHERE nombre_estado_viaje = 'PROGRAMADO'), 
+p_id_unidad, 
+p_id_conductor, 
+p_fecha_salida
+);
+END;
+$$;
+
+
+-- //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+-- TAQUILLA DAO
+
+
+CREATE OR REPLACE VIEW administracion.v_taquillas AS
+SELECT 
+q.id_taquilla, 
+t.id_terminal, 
+t.nombre_terminal, 
+q.identificador, 
+q.serie_folio, 
+q.rango_inicial, 
+q.rango_final, 
+q.folios_usados, 
+q.activo
+FROM administracion.taquilla q
+INNER JOIN administracion.terminal t ON t.id_terminal = q.id_terminal
+ORDER BY t.nombre_terminal, q.identificador;
+
+
+
+CREATE OR REPLACE PROCEDURE administracion.sp_guardar_taquilla(
+    p_id_taquilla INT,
+    p_id_terminal INT,
+    p_identificador TEXT,
+    p_serie_folio TEXT,
+    p_rango_inicial INT,
+    p_rango_final INT,
+    p_activo BOOLEAN
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF p_id_taquilla = 0 THEN
+        INSERT INTO administracion.taquilla (id_terminal, identificador, serie_folio, rango_inicial, rango_final, activo)
+        VALUES (p_id_terminal, p_identificador, p_serie_folio, p_rango_inicial, p_rango_final, p_activo);
+    ELSE
+        UPDATE administracion.taquilla 
+        SET id_terminal = p_id_terminal,
+            identificador = p_identificador,
+            serie_folio = p_serie_folio,
+            rango_inicial = p_rango_inicial,
+            rango_final = p_rango_final,
+            activo = p_activo
+        WHERE id_taquilla = p_id_taquilla;
+    END IF;
+END;
+$$;
+
+
+-- /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+-- TERMINAL DAO
+
+CREATE OR REPLACE VIEW administracion.v_terminales AS 
+SELECT 
+t.id_terminal,
+t.nombre_terminal
+FROM administracion.terminal t
+ORDER BY nombre_terminal;
+
+
+
+
+CREATE OR REPLACE FUNCTION viajes.fn_obtener_destinos_validos(p_id_origen INT)
+RETURNS TABLE (id_terminal INT, nombre_terminal TEXT)
+LANGUAGE sql
+AS $$
+SELECT DISTINCT t.id_terminal, t.nombre_terminal
+FROM viajes.ruta_paradas o
+    INNER JOIN viajes.ruta_paradas d ON d.id_ruta = o.id_ruta AND d.orden > o.orden
+    INNER JOIN viajes.precio_tramo p ON p.id_ruta = o.id_ruta AND p.orden_origen = o.orden AND p.orden_destino = d.orden
+    INNER JOIN administracion.terminal t ON t.id_terminal = d.id_terminal
+    WHERE o.id_terminal = p_id_origen
+    ORDER BY t.nombre_terminal;
+$$;
+
+
+
+CREATE OR REPLACE PROCEDURE administracion.sp_crear_terminal(
+INOUT p_id_terminal INT,
+p_nombre_terminal TEXT,
+p_direccion TEXT
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+INSERT INTO administracion.terminal (id_conexion, nombre_terminal, direccion)
+VALUES (
+(SELECT id_conexion FROM administracion.estado_conexion WHERE nombre_conexion = 'DESCONECTADO'), 
+p_nombre_terminal, 
+p_direccion
+)
+RETURNING id_terminal INTO p_id_terminal;
+END;
+$$;
+
+
+
+-- //////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+-- UNIDAD DAO
+
+CREATE OR REPLACE VIEW viajes.v_nombre_tipo_bus AS
+SELECT
+id_nombre_tipo_bus,
+nombre_tipo_bus
+FROM viajes.nombre_tipo_bus
+ORDER BY id_nombre_tipo_bus;
+
+
+CREATE OR REPLACE VIEW viajes.v_layouts AS
+SELECT
+id_layout,
+nombre_layout
+FROM viajes.layout
+ORDER BY id_layout;
+
+
+CREATE OR REPLACE VIEW viajes.v_unidades AS
+SELECT
+u.id_unidad,
+u.placa,
+u.modelo,
+u.anio,
+u.kilometraje,
+nt.id_nombre_tipo_bus,
+nt.nombre_tipo_bus,
+l.id_layout,
+l.nombre_layout,
+tb.capacidad
+FROM viajes.unidad u
+INNER JOIN viajes.tipo_bus tb ON tb.id_tipo_bus = u.id_tipo_bus
+INNER JOIN viajes.nombre_tipo_bus nt ON nt.id_nombre_tipo_bus = tb.id_nombre_tipo_bus
+INNER JOIN viajes.layout l ON l.id_layout = tb.id_layout
+ORDER BY u.placa;
+
+CREATE OR REPLACE PROCEDURE viajes.sp_guardar_unidad(
+p_id_unidad INT,
+p_placa TEXT,
+p_modelo TEXT,
+p_anio INT,
+p_kilometraje INT,
+p_id_nombre_tipo_bus INT,
+p_id_layout INT,
+p_capacidad INT
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+v_id_tipo_bus INT;
+BEGIN
+SELECT id_tipo_bus INTO v_id_tipo_bus 
+FROM viajes.tipo_bus 
+WHERE id_nombre_tipo_bus = p_id_nombre_tipo_bus 
+AND id_layout = p_id_layout 
+AND capacidad = p_capacidad;
+IF NOT FOUND THEN
+INSERT INTO viajes.tipo_bus (id_nombre_tipo_bus, id_layout, capacidad) 
+VALUES (p_id_nombre_tipo_bus, p_id_layout, p_capacidad)
+RETURNING id_tipo_bus INTO v_id_tipo_bus;
+END IF;
+IF p_id_unidad = 0 THEN
+INSERT INTO viajes.unidad (id_tipo_bus, placa, modelo, anio, kilometraje)
+VALUES (v_id_tipo_bus, p_placa, p_modelo, p_anio, p_kilometraje);
+ELSE
+UPDATE viajes.unidad 
+SET id_tipo_bus = v_id_tipo_bus,
+placa = p_placa,
+modelo = p_modelo,
+anio = p_anio,
+kilometraje = p_kilometraje
+WHERE id_unidad = p_id_unidad;
+END IF;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION viajes.fn_obtener_horarios_ruta(p_id_ruta INT)
+RETURNS TABLE (hora_salida TIME)
+LANGUAGE sql
+AS $$
+SELECT hora_salida 
+FROM viajes.horario_ruta 
+WHERE id_ruta = p_id_ruta
+ORDER BY hora_salida;
+$$;
+
+
+-- ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+-- ASIENTO DAO (taquillero, venta)
+
+CREATE OR REPLACE FUNCTION viajes.fn_obtener_autobus_viaje(p_id_viaje INT)
+RETURNS TABLE (
+nombre_layout TEXT,
+capacidad INT
+)
+LANGUAGE sql
+AS $$
+SELECT l.nombre_layout, tb.capacidad
+FROM viajes.viaje_programado vp
+INNER JOIN viajes.unidad u ON u.id_unidad = vp.id_unidad
+INNER JOIN viajes.tipo_bus tb ON tb.id_tipo_bus = u.id_tipo_bus
+INNER JOIN viajes.layout l ON l.id_layout = tb.id_layout
+WHERE vp.id_viaje = p_id_viaje;
+$$;
+
+
+CREATE OR REPLACE FUNCTION ventas.fn_obtener_asientos_ocupados(p_id_viaje INT, p_id_origen INT, p_id_destino INT)
+RETURNS TABLE (
+num_asiento INT
+)
+LANGUAGE sql
+AS $$
+SELECT b.num_asiento
+FROM ventas.boleto b
+WHERE b.id_viaje = p_id_viaje
+AND b.id_estado_boleto <> 4
+AND b.tramo_ocupacion && (
+SELECT int4range(o.orden, d.orden, '[)')
+FROM viajes.viaje_programado vp
+INNER JOIN viajes.ruta_paradas o ON o.id_ruta = vp.id_ruta AND o.id_terminal = p_id_origen
+INNER JOIN viajes.ruta_paradas d ON d.id_ruta = vp.id_ruta AND d.id_terminal = p_id_destino
+WHERE vp.id_viaje = p_id_viaje
+)
+ORDER BY b.num_asiento;
+$$;
+
+
+
+-- /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+-- TARIFA DAO (taquillero, venta)
+
+CREATE OR REPLACE VIEW ventas.v_tarifas AS
+SELECT id_tarifa, nombre_tarifa, descuento
+FROM ventas.tarifa
+ORDER BY id_tarifa;
+
+
+
+-- /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+-- HORARIOS DE RUTA (administrador, desde el catalogo de rutas)
+-- Las horas de salida oficiales se vinculan a una ruta ya creada; la lista se lee con fn_obtener_horarios_ruta.
+
+CREATE OR REPLACE PROCEDURE viajes.sp_agregar_horario_ruta(p_id_ruta INT, p_hora_salida TIME)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+INSERT INTO viajes.horario_ruta (id_ruta, hora_salida) VALUES (p_id_ruta, p_hora_salida);
+END;
+$$;
+
+
+
+CREATE OR REPLACE PROCEDURE viajes.sp_quitar_horario_ruta(p_id_ruta INT, p_hora_salida TIME)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+DELETE FROM viajes.horario_ruta WHERE id_ruta = p_id_ruta AND hora_salida = p_hora_salida;
+END;
+$$;

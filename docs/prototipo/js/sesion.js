@@ -22,15 +22,17 @@ const ICONOS = {
   personal: 'M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM2 21c0-4 3-6 7-6s7 2 7 6M16 4.5a3.5 3.5 0 0 1 0 7M18 15c2.5.6 4 2.5 4 6',
   cuentas: 'M3 5h18v14H3zM10 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 10h4M14 14h4',
   reportes: 'M4 20V10M10 20V4M16 20v-7M22 20H2',
+  taller: 'M14.5 6a4 4 0 0 0-5 5L3 17.5 6.5 21l6.5-6.5a4 4 0 0 0 5-5l-2.5 2.5-2.5-.5-.5-2.5z',
+  semaforo: 'M9 2h6a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM12 7h.01M12 12h.01M12 17h.01',
   salir: 'M9 4H5v16h4M16 8l4 4-4 4M20 12H9'
 };
 const icono = nombre => `<svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="${ICONOS[nombre]}"/></svg>`;
 
 const MENU = {
   TAQUILLERO: [['Venta', '/taquilla/venta.html', 'venta'], ['Boletos vendidos', '/taquilla/boletos.html', 'boletos']],
-  DESPACHADOR: [['Programar salida', '/despacho/programar.html', 'programar'], ['Manifiesto', '/despacho/manifiesto.html', 'manifiesto'], ['Abordaje', '/despacho/abordaje.html', 'abordaje']],
+  DESPACHADOR: [['Programar salida', '/despacho/programar.html', 'programar'], ['Manifiesto', '/despacho/manifiesto.html', 'manifiesto'], ['Abordaje', '/despacho/abordaje.html', 'abordaje'], ['Disponibilidad', '/despacho/semaforo.html', 'semaforo']],
   ADMINISTRADOR: [['Rutas', '/admin/rutas.html', 'rutas'], ['Unidades', '/admin/unidades.html', 'unidades'], ['Taquillas', '/admin/taquillas.html', 'taquillas'],
-    ['Personal', '/admin/personal.html', 'personal'], ['Cuentas', '/admin/cuentas.html', 'cuentas'], ['Reportes', '/admin/reportes.html', 'reportes']]
+    ['Personal', '/admin/personal.html', 'personal'], ['Cuentas', '/admin/cuentas.html', 'cuentas'], ['Reportes', '/admin/reportes.html', 'reportes'], ['Taller', '/admin/taller.html', 'taller'], ['Órdenes de taller', '/admin/ordenes.html', 'taller']]
 };
 
 // Devuelve { cuenta } o { error }; una cuenta inactiva no entra aunque la contraseña sea correcta.

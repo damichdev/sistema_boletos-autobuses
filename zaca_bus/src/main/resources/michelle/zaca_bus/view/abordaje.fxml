@@ -10,7 +10,7 @@
 <?import javafx.scene.layout.VBox?>
 
 <!-- Vista de tableta. Un lector USB teclea el folio en el campo y manda Enter. La cámara no viene en JavaFX básico. -->
-<BorderPane styleClass="pagina, tableta" fx:controller="michelle.zaca_bus.controller.AbordajeController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane styleClass="pagina, tableta" fx:controller="michelle.zaca_bus.controller.despachador_controller.AbordajeController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
     <left>
         <fx:include source="barra-despachador.fxml"/>
     </left>

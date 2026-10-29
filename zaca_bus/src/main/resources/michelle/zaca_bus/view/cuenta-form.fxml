@@ -13,7 +13,7 @@
 <?import javafx.scene.layout.VBox?>
 
 <!-- Ventana para crear o editar una cuenta. En el alta se elige entre el personal sin cuenta; en la edición solo se muestra. -->
-<StackPane styleClass="ventana-sombra" fx:controller="michelle.zaca_bus.controller.CuentasController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+<StackPane styleClass="ventana-sombra" fx:controller="michelle.zaca_bus.controller.admin_controller.CuentasController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
     <VBox styleClass="ventana" prefWidth="620" maxWidth="620" maxHeight="-Infinity">
         <HBox styleClass="ventana-titulo" alignment="CENTER_LEFT">
             <Label fx:id="lblTitulo" text="Nueva cuenta" styleClass="ventana-titulo-texto"/>

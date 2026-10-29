@@ -1,18 +1,17 @@
 import { exigirRol, pintarBarra } from '../sesion.js';
 import { cargar, guardar } from '../estado.js';
-import { licenciaPorVencer, porId, fechaLocal, erroresTaquilla, motivosNoEliminar, eliminarPersona } from '../logica.js';
+import { semaforo, licenciaPorVencer, porId, fechaLocal, erroresTaquilla, motivosNoEliminar, eliminarPersona } from '../logica.js';
 import { h, esc, tabla, boton, abrirVentana, toast } from '../ui.js';
 
-const cuenta = await exigirRol('ADMINISTRADOR');
-pintarBarra(cuenta);
-
 const app = document.getElementById('app');
+const cuenta = await exigirRol(...(app.dataset.roles ?? 'ADMINISTRADOR').split(','));
+pintarBarra(cuenta);
 let estado = cargar();
 
 const CURP = /^[A-Z]{4}[0-9]{6}[HMX][A-Z]{5}[A-Z0-9][0-9]$/;
 const opcionesDe = (lista, texto) => lista.map(x => [x.id, texto(x)]);
 const nombre = p => `${p.nombre} ${p.apPaterno} ${p.apMaterno}`;
-const capital = s => s[0] + s.slice(1).toLowerCase();
+const capital = s => s[0] + s.slice(1).toLowerCase().replace('_', ' ');
 const folios = (r, id) => erroresTaquilla(id ? porId(estado.taquillas, id) : { ...r, foliosUsados: 0 }, r);
 
 function chipLicencia(p) {
@@ -31,7 +30,7 @@ const CONFIG = {
       { titulo: 'Tipo', valor: u => esc(capital(u.tipo)) },
       { titulo: 'Acomodo', valor: u => `<span class="mono">${u.layout}</span> · ${u.capacidad} asientos` },
       { titulo: 'Kilometraje', valor: u => `<span class="mono">${u.km.toLocaleString('es-MX')}</span>` },
-      { titulo: 'Estado', valor: u => u.enMantenimiento ? '<span class="chip aviso">En taller</span>' : '<span class="chip ok">Disponible</span>' }
+      { titulo: 'Estado', valor: u => { const s = semaforo(estado, u.placa); return `<span class="chip ${s.aptoParaViajar ? 'ok' : s.estatus === 'DE BAJA' ? 'error' : 'aviso'}">${esc(capital(s.estatus))}</span>`; } }
     ],
     campos: () => [
       { clave: 'placa', etiqueta: 'Placa', requerido: true },
@@ -42,7 +41,7 @@ const CONFIG = {
       { clave: 'layout', etiqueta: 'Acomodo', opciones: ['2+2', '2+1', '1+1'].map(x => [x, x]) },
       { clave: 'capacidad', etiqueta: 'Capacidad', tipo: 'number', requerido: true, validar: v => v > 0 || 'Debe ser mayor que 0' }
     ],
-    nuevo: () => ({ placa: '', modelo: '', anio: new Date().getFullYear(), km: 0, tipo: 'PRIMERA', layout: '2+2', capacidad: 40, enMantenimiento: false }),
+    nuevo: () => ({ placa: '', modelo: '', anio: new Date().getFullYear(), km: 0, tipo: 'PRIMERA', layout: '2+2', capacidad: 40 }),
     buscar: (u, t) => (u.placa + u.modelo).toLowerCase().includes(t)
   },
   taquillas: {
@@ -91,7 +90,7 @@ const CONFIG = {
       { campo: 'puesto', valor: 'DESPACHADOR', titulo: 'Despacho', boton: '+ Agregar despachador' },
       { campo: 'puesto', valor: 'ADMINISTRADOR', titulo: 'Administración', boton: '+ Agregar administrador' },
       { campo: 'puesto', valor: 'CONDUCTOR', titulo: 'Choferes', boton: '+ Agregar chofer' },
-      { campo: 'puesto', valor: 'MECANICO', titulo: 'Mecánicos', boton: '+ Agregar mecánico' }
+      { campo: 'puesto', valor: 'MECANICO', titulo: 'Mecánicos', boton: '+ Agregar mecánico' },
     ],
     buscar: (p, t) => (nombre(p) + p.curp + (p.telefono ?? '')).toLowerCase().includes(t),
     tituloFila: p => nombre(p),

@@ -8,7 +8,7 @@
 <?import javafx.scene.layout.VBox?>
 
 <!-- Los cinco paneles (uno por puesto) los arma PersonalController dentro de la rejilla. -->
-<BorderPane styleClass="pagina" fx:controller="michelle.zaca_bus.controller.PersonalController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane styleClass="pagina" fx:controller="michelle.zaca_bus.controller.admin_controller.PersonalController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
     <left>
         <fx:include source="barra-administrador.fxml"/>
     </left>

@@ -13,7 +13,7 @@
 <?import javafx.scene.layout.VBox?>
 
 <!-- Vista de tableta. La escala se elige a mano hasta que el login diga la terminal del despachador. -->
-<BorderPane styleClass="pagina, tableta" fx:controller="michelle.zaca_bus.controller.ManifiestoController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane styleClass="pagina, tableta" fx:controller="michelle.zaca_bus.controller.despachador_controller.ManifiestoController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
     <left>
         <fx:include source="barra-despachador.fxml"/>
     </left>

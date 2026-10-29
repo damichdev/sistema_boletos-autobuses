@@ -40,6 +40,16 @@
             <SVGPath content="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c0-4 3.5-6 8-6s8 2 8 6M17 3l1.5 1.5L21 2" styleClass="icono"/>
         </graphic>
     </Button>
+    <Button text="Taller" id="taller" onAction="#irA" styleClass="nav-boton" maxWidth="Infinity" graphicTextGap="12">
+        <graphic>
+            <SVGPath content="M14.5 6a4 4 0 0 0-5 5L3 17.5 6.5 21l6.5-6.5a4 4 0 0 0 5-5l-2.5 2.5-2.5-.5-.5-2.5z" styleClass="icono"/>
+        </graphic>
+    </Button>
+    <Button text="Órdenes de taller" id="ordenes-taller" onAction="#irA" styleClass="nav-boton" maxWidth="Infinity" graphicTextGap="12">
+        <graphic>
+            <SVGPath content="M14.5 6a4 4 0 0 0-5 5L3 17.5 6.5 21l6.5-6.5a4 4 0 0 0 5-5l-2.5 2.5-2.5-.5-.5-2.5z" styleClass="icono"/>
+        </graphic>
+    </Button>
     <Region VBox.vgrow="ALWAYS"/>
     <HBox alignment="CENTER_LEFT" spacing="8" styleClass="nodo">
         <Circle radius="4" styleClass="nodo-punto"/>

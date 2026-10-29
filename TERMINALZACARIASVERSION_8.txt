@@ -1,0 +1,70 @@
+-- VERSION 8 (aditiva: no toca V6 ni V7; la firma y las columnas de fn_buscar_salidas no cambian)
+-- ROLLBACK: DROP TABLE viajes.horario_ruta;  y volver a correr fn_buscar_salidas de la version 7.
+
+-- /////////////////////////////////////////////////////////////////////////////////
+-- 1. HORARIOS BASE POR RUTA
+-- La empresa define las corridas de cada ruta; el despachador elige una al programar la salida.
+-- La hora libre sigue permitida para corridas extra (la valida Java, no esta tabla).
+
+CREATE TABLE IF NOT EXISTS viajes.horario_ruta(
+id_ruta INT NOT NULL,
+hora_salida TIME NOT NULL,
+CONSTRAINT pk_horario_ruta PRIMARY KEY (id_ruta, hora_salida),
+CONSTRAINT fk_ruta_horario FOREIGN KEY (id_ruta) REFERENCES viajes.ruta(id_ruta) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- Ejemplo de carga (ajustar a las rutas reales):
+-- INSERT INTO viajes.horario_ruta (id_ruta, hora_salida) VALUES (1, '06:00'), (1, '08:30'), (1, '11:00');
+
+-- /////////////////////////////////////////////////////////////////////////////////
+-- 2. fn_buscar_salidas CON LA HORA DE LA PARADA DEL PASAJERO
+-- Cambios respecto a la version 7 (mismas columnas, Java no se modifica):
+--  a) fecha_salida ahora es la hora a la que el bus sale de la terminal ORIGEN del pasajero
+--     (fecha_salida del viaje + min_desde_origen de esa parada), no la del origen de la ruta.
+--  b) "aun no sale" y "fecha del dia" se comparan con esa hora, en America/Mexico_City.
+--  c) Un viaje EN RUTA se sigue vendiendo desde paradas posteriores a la primera, mientras el bus no pase por ellas.
+
+CREATE OR REPLACE FUNCTION viajes.fn_buscar_salidas(p_id_origen INT, p_id_destino INT, p_fecha DATE)
+RETURNS TABLE (
+id_viaje INT,
+fecha_salida TIMESTAMPTZ,
+tipo_bus TEXT,
+servicio TEXT,
+placa TEXT,
+libres INT,
+precio DECIMAL
+)
+LANGUAGE sql
+AS $$
+SELECT
+vp.id_viaje,
+vp.fecha_salida + make_interval(mins => o.min_desde_origen),
+ntb.nombre_tipo_bus,
+ts.nombre_servicio,
+u.placa,
+tb.capacidad - (SELECT count(*) FROM ventas.boleto b
+                WHERE b.id_viaje = vp.id_viaje
+                AND b.id_estado_boleto <> 4
+                AND b.tramo_ocupacion && int4range(o.orden, d.orden, '[)'))::INT,
+pt.precio
+FROM viajes.viaje_programado vp
+INNER JOIN viajes.estado_viaje ev ON ev.id_estado_viaje = vp.id_estado_viaje
+INNER JOIN viajes.ruta r ON r.id_ruta = vp.id_ruta
+INNER JOIN viajes.tipo_servicio ts ON ts.id_servicio = r.id_servicio
+INNER JOIN viajes.unidad u ON u.id_unidad = vp.id_unidad
+INNER JOIN viajes.tipo_bus tb ON tb.id_tipo_bus = u.id_tipo_bus
+INNER JOIN viajes.nombre_tipo_bus ntb ON ntb.id_nombre_tipo_bus = tb.id_nombre_tipo_bus
+INNER JOIN viajes.ruta_paradas o ON o.id_ruta = vp.id_ruta AND o.id_terminal = p_id_origen
+INNER JOIN viajes.ruta_paradas d ON d.id_ruta = vp.id_ruta AND d.id_terminal = p_id_destino AND d.orden > o.orden
+INNER JOIN viajes.precio_tramo pt ON pt.id_ruta = vp.id_ruta AND pt.orden_origen = o.orden AND pt.orden_destino = d.orden
+WHERE (ev.nombre_estado_viaje IN ('PROGRAMADO', 'ABORDANDO')
+       OR (ev.nombre_estado_viaje = 'EN RUTA'
+           AND o.orden > (SELECT min(rp.orden) FROM viajes.ruta_paradas rp WHERE rp.id_ruta = vp.id_ruta)))
+AND vp.fecha_salida + make_interval(mins => o.min_desde_origen) > now()
+AND ((vp.fecha_salida + make_interval(mins => o.min_desde_origen)) AT TIME ZONE 'America/Mexico_City')::date = p_fecha
+ORDER BY 2;
+$$;
+
+-- NOTA: decisiones nuevas a confirmar con la duena:
+-- 1. EN RUTA se vende solo desde paradas posteriores a la primera y antes de que el bus llegue a ellas.
+-- 2. Cancelar boleto sigue usando la hora del viaje (pendiente, punto 6 del analisis).

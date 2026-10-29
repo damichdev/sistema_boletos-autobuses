@@ -1,0 +1,51 @@
+-- HORARIO DAO (taquillero, panel Horario de Venta)
+
+-- Salidas de una fecha que pasan por el origen antes que por el destino, con lugares libres en ese tramo y su precio.
+-- Solo viajes PROGRAMADO o ABORDANDO que aun no salen (estos filtros NO vienen del script, ver nota al final).
+-- Libres = capacidad - boletos no cancelados cuyo tramo_ocupacion se cruza con [orden_origen, orden_destino).
+
+CREATE OR REPLACE FUNCTION viajes.fn_buscar_salidas(p_id_origen INT, p_id_destino INT, p_fecha DATE)
+RETURNS TABLE (
+id_viaje INT,
+fecha_salida TIMESTAMPTZ,
+tipo_bus TEXT,
+servicio TEXT,
+placa TEXT,
+libres INT,
+precio DECIMAL
+)
+LANGUAGE sql
+AS $$
+SELECT
+vp.id_viaje,
+vp.fecha_salida,
+ntb.nombre_tipo_bus,
+ts.nombre_servicio,
+u.placa,
+tb.capacidad - (SELECT count(*) FROM ventas.boleto b
+                WHERE b.id_viaje = vp.id_viaje
+                AND b.id_estado_boleto <> 4
+                AND b.tramo_ocupacion && int4range(o.orden, d.orden, '[)'))::INT,
+pt.precio
+FROM viajes.viaje_programado vp
+INNER JOIN viajes.estado_viaje ev ON ev.id_estado_viaje = vp.id_estado_viaje
+INNER JOIN viajes.ruta r ON r.id_ruta = vp.id_ruta
+INNER JOIN viajes.tipo_servicio ts ON ts.id_servicio = r.id_servicio
+INNER JOIN viajes.unidad u ON u.id_unidad = vp.id_unidad
+INNER JOIN viajes.tipo_bus tb ON tb.id_tipo_bus = u.id_tipo_bus
+INNER JOIN viajes.nombre_tipo_bus ntb ON ntb.id_nombre_tipo_bus = tb.id_nombre_tipo_bus
+INNER JOIN viajes.ruta_paradas o ON o.id_ruta = vp.id_ruta AND o.id_terminal = p_id_origen
+INNER JOIN viajes.ruta_paradas d ON d.id_ruta = vp.id_ruta AND d.id_terminal = p_id_destino AND d.orden > o.orden
+INNER JOIN viajes.precio_tramo pt ON pt.id_ruta = vp.id_ruta AND pt.orden_origen = o.orden AND pt.orden_destino = d.orden
+WHERE ev.nombre_estado_viaje IN ('PROGRAMADO', 'ABORDANDO')
+AND vp.fecha_salida > now()
+AND (vp.fecha_salida AT TIME ZONE 'America/Mexico_City')::date = p_fecha
+ORDER BY vp.fecha_salida;
+$$;
+
+
+-- NOTA: lo que NO viene del script y se decidio aqui (confirmar):
+-- 1. Solo estados PROGRAMADO y ABORDANDO (venta no se hace en EN RUTA, CERRADO ni SIN UNIDAD). Viene del prototipo/contrato.
+-- 2. Solo salidas que aun no salen (fecha_salida > now()). Viene del prototipo/contrato.
+-- 3. La fecha se compara en hora de Mexico (America/Mexico_City), igual que Formato.ZONA en Java.
+-- 4. Un viaje con la unidad en taller (taller_db por FDW) sigue apareciendo; el bloqueo se hace al programar la salida.

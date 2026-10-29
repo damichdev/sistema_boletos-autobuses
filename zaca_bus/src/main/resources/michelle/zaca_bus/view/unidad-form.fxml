@@ -12,7 +12,7 @@
 <?import javafx.scene.layout.VBox?>
 
 <!-- Ventana de alta y edición de unidades. Tipo y acomodo se llenan desde la base. -->
-<StackPane styleClass="ventana-sombra" fx:controller="michelle.zaca_bus.controller.UnidadesController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+<StackPane styleClass="ventana-sombra" fx:controller="michelle.zaca_bus.controller.admin_controller.UnidadesController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
     <VBox styleClass="ventana" prefWidth="620" maxWidth="620" maxHeight="-Infinity">
         <HBox styleClass="ventana-titulo" alignment="CENTER_LEFT">
             <Label fx:id="lblTitulo" text="Nueva unidad" styleClass="ventana-titulo-texto"/>

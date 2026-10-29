@@ -1,6 +1,6 @@
 import { exigirRol, pintarBarra } from '../sesion.js';
 import { cargar, guardar } from '../estado.js';
-import { validarAsignacion, registrar, porId, fechaLocal, ocupacionPorTramo, movimientoPorParada, licenciaPorVencer, horaLocal } from '../logica.js';
+import { validarAsignacion, semaforo, registrar, porId, fechaLocal, ocupacionPorTramo, movimientoPorParada, licenciaPorVencer, horaLocal } from '../logica.js';
 import { h, esc, tabla, boton, toast, hora, abrirVentana } from '../ui.js';
 
 const cuenta = await exigirRol('DESPACHADOR');
@@ -24,7 +24,7 @@ const form = h(`<section class="ventana">
         <div class="campo"><label for="fecha">Fecha</label><input id="fecha" type="date" class="entrada" value="${fechaLocal(new Date())}" min="${fechaLocal(new Date())}"></div>
         <div class="campo"><label for="hora">Hora de salida</label><input id="hora" type="time" class="entrada mono" step="300"></div>
       </div>
-      <div class="campo"><label for="unidad">Unidad</label><select id="unidad" class="entrada"><option value="">Elija la unidad…</option>${opciones(estado.unidades, u => `${u.placa} · ${u.tipo} · ${u.capacidad} asientos${u.enMantenimiento ? ' · EN TALLER' : ''}`)}</select></div>
+      <div class="campo"><label for="unidad">Unidad</label><select id="unidad" class="entrada"><option value="">Elija la unidad…</option>${opciones(estado.unidades, u => `${u.placa} · ${u.tipo} · ${u.capacidad} asientos${semaforo(estado, u.placa).aptoParaViajar ? '' : ' · ' + semaforo(estado, u.placa).estatus}`)}</select></div>
       <div class="campo"><label for="chofer">Chofer</label><select id="chofer" class="entrada"><option value="">Elija el chofer…</option>${opciones(estado.personal.filter(p => p.puesto === 'CONDUCTOR'), p => `${nombre(p)} · licencia vence ${p.vigencia}`)}</select></div>
     </div>
     <div class="alerta aviso" id="motivos" hidden></div>

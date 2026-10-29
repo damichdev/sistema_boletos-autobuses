@@ -107,10 +107,63 @@ export function validarAsignacion(estado, idUnidad, idConductor, fechaSalida) {
   const motivos = [];
   const unidad = porId(estado.unidades, idUnidad);
   const persona = porId(estado.personal, idConductor);
-  if (unidad?.enMantenimiento) motivos.push('Unidad en mantenimiento');
+  if (unidad && !semaforo(estado, unidad.placa).aptoParaViajar) motivos.push(`Unidad no apta: ${semaforo(estado, unidad.placa).estatus.toLowerCase()}`);
   if (persona && persona.puesto !== 'CONDUCTOR') motivos.push('El empleado no es CONDUCTOR');
   if (persona && (!persona.vigencia || persona.vigencia < fechaSalida.slice(0, 10))) motivos.push('Licencia vencida');
   return motivos;
+}
+
+// Equivale a v_semaforo_unidades (taller_db por FDW). Una placa sin registro en taller no se bloquea.
+export function semaforo(estado, placa) {
+  const bus = estado.busesTaller.find(b => b.placa === placa);
+  return { placa, estatus: bus ? porId(estado.estadosTaller, bus.idEstado).nombre : 'SIN REGISTRO EN TALLER', aptoParaViajar: !bus || bus.idEstado === 1 };
+}
+
+export const viajesPendientesDe = (estado, placa) => estado.viajes.filter(v => ACTIVOS.includes(v.estado) && porId(estado.unidades, v.idUnidad).placa === placa);
+
+// Ingreso físico: deja el bus en taller (2 preventivo, 3 correctivo) y abre su orden. Costo = estimado hasta cerrarla.
+// Los mecánicos son personal con puesto MECANICO (se dan de alta en Personal).
+export const mecanicos = estado => estado.personal.filter(p => p.puesto === 'MECANICO');
+
+export function abrirOrden(estado, { placa, idMecanico, idEstado, fechaIngreso, diagnostico, costo, observaciones = null }, idCuenta, ahora) {
+  if (estado.ordenes.some(o => o.placa === placa && !o.fechaSalida)) throw new Error('ORDEN_ABIERTA');
+  if (![2, 3].includes(idEstado)) throw new Error('ESTADO_INVALIDO');
+  if (porId(estado.personal, idMecanico)?.puesto !== 'MECANICO') throw new Error('MECANICO_INVALIDO');
+  if (!(costo >= 0)) throw new Error('COSTO_INVALIDO');
+  let bus = estado.busesTaller.find(b => b.placa === placa);
+  if (!bus) estado.busesTaller.push(bus = { placa, idEstado: 1, ultimaFechaIngreso: null, observaciones: null });
+  bus.idEstado = idEstado;
+  bus.ultimaFechaIngreso = fechaIngreso;
+  if (observaciones) bus.observaciones = observaciones;
+  const orden = { id: Math.max(0, ...estado.ordenes.map(o => o.id)) + 1, placa, idMecanico, fechaIngreso, fechaSalida: null, diagnostico, costo };
+  estado.ordenes.push(orden);
+  registrar(estado, idCuenta, 'INGRESO_TALLER', `Orden ${orden.id} · ${placa}`, ahora);
+  return orden;
+}
+
+// Al cerrar, el bus vuelve a OPERATIVO (1) o se da de baja (4).
+export function cerrarOrden(estado, idOrden, { fechaSalida, diagnostico, costo, idEstado }, idCuenta, ahora) {
+  const orden = porId(estado.ordenes, idOrden);
+  if (!orden || orden.fechaSalida) throw new Error('ORDEN_CERRADA');
+  if (fechaSalida < orden.fechaIngreso) throw new Error('SALIDA_ANTES_DE_INGRESO');
+  if (!(costo >= 0)) throw new Error('COSTO_INVALIDO');
+  Object.assign(orden, { fechaSalida, diagnostico, costo });
+  estado.busesTaller.find(b => b.placa === orden.placa).idEstado = idEstado;
+  registrar(estado, idCuenta, 'SALIDA_TALLER', `Orden ${orden.id} · ${orden.placa} · $${costo}`, ahora);
+  return orden;
+}
+
+// Auditoría: solo órdenes cerradas suman gasto; las abiertas llevan un costo estimado.
+export function resumenTaller(estado) {
+  const cerradas = estado.ordenes.filter(o => o.fechaSalida);
+  const suma = os => os.reduce((s, o) => s + o.costo, 0);
+  const dias = os => os.length ? os.reduce((s, o) => s + (new Date(o.fechaSalida) - new Date(o.fechaIngreso)) / 864e5, 0) / os.length : 0;
+  const agrupar = (clave, lista) => lista.map(x => { const os = cerradas.filter(o => o[clave[0]] === x[clave[1]]); return { ...x, ordenes: os.length, costo: suma(os), dias: dias(os) }; });
+  return {
+    gasto: suma(cerradas), abiertas: estado.ordenes.length - cerradas.length, dias: dias(cerradas), cerradas: cerradas.length,
+    porMecanico: agrupar(['idMecanico', 'id'], mecanicos(estado)),
+    porBus: agrupar(['placa', 'placa'], estado.busesTaller)
+  };
 }
 
 export function licenciaPorVencer(persona, hoy, dias = 30) {

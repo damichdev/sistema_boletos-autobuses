@@ -11,7 +11,7 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane styleClass="pagina" fx:controller="michelle.zaca_bus.controller.RutasController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane styleClass="pagina" fx:controller="michelle.zaca_bus.controller.admin_controller.RutasController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
     <left>
         <fx:include source="barra-administrador.fxml"/>
     </left>
@@ -37,7 +37,7 @@
                             <TableColumn fx:id="colParadas" text="Paradas" prefWidth="320" sortable="false" reorderable="false"/>
                             <TableColumn fx:id="colDistancia" text="Distancia" prefWidth="90" sortable="false" reorderable="false"/>
                             <TableColumn fx:id="colPrecio" text="Origen a destino" prefWidth="130" sortable="false" reorderable="false"/>
-                            <TableColumn fx:id="colAcciones" prefWidth="90" sortable="false" reorderable="false"/>
+                            <TableColumn fx:id="colAcciones" prefWidth="150" sortable="false" reorderable="false"/>
                         </columns>
                         <columnResizePolicy>
                             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>

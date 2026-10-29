@@ -26,10 +26,10 @@ const tarifas = [
 ];
 
 const unidades = [
-  { id: 1, placa: 'CHS-1201', modelo: 'Irizar i6', anio: 2022, km: 182400, tipo: 'PRIMERA', layout: '2+2', capacidad: 40, enMantenimiento: false },
-  { id: 2, placa: 'CHS-0703', modelo: 'Volvo 9800', anio: 2021, km: 240150, tipo: 'EJECUTIVO', layout: '2+1', capacidad: 30, enMantenimiento: false },
-  { id: 3, placa: 'CHS-0315', modelo: 'Mercedes Multego', anio: 2019, km: 410900, tipo: 'ORDINARIO', layout: '2+2', capacidad: 40, enMantenimiento: true },
-  { id: 4, placa: 'CHS-1488', modelo: 'Irizar i8', anio: 2024, km: 61200, tipo: 'PRIMERA', layout: '2+2', capacidad: 40, enMantenimiento: false }
+  { id: 1, placa: 'CHS-1201', modelo: 'Irizar i6', anio: 2022, km: 182400, tipo: 'PRIMERA', layout: '2+2', capacidad: 40 },
+  { id: 2, placa: 'CHS-0703', modelo: 'Volvo 9800', anio: 2021, km: 240150, tipo: 'EJECUTIVO', layout: '2+1', capacidad: 30 },
+  { id: 3, placa: 'CHS-0315', modelo: 'Mercedes Multego', anio: 2019, km: 410900, tipo: 'ORDINARIO', layout: '2+2', capacidad: 40 },
+  { id: 4, placa: 'CHS-1488', modelo: 'Irizar i8', anio: 2024, km: 61200, tipo: 'PRIMERA', layout: '2+2', capacidad: 40 }
 ];
 
 const hoy = new Date();
@@ -44,7 +44,9 @@ const personal = [
   { id: 6, nombre: 'Jorge', apPaterno: 'Hernández', apMaterno: 'Cruz', curp: 'HECJ880910HCSRRR05', telefono: '9625556677', puesto: 'DESPACHADOR', licencia: null, vigencia: null },
   { id: 7, nombre: 'Carmen', apPaterno: 'Ramos', apMaterno: 'Díaz', curp: 'RADC910427MCSMZR03', telefono: '9647778899', puesto: 'DESPACHADOR', licencia: null, vigencia: null },
   { id: 8, nombre: 'Ana', apPaterno: 'Morales', apMaterno: 'Santiago', curp: 'MOSA870618MCSRNN08', telefono: '9629990011', puesto: 'ADMINISTRADOR', licencia: null, vigencia: null },
-  { id: 9, nombre: 'Pedro', apPaterno: 'Aguilar', apMaterno: 'Nájera', curp: 'AUNP760223HCSGJD06', telefono: '9621239876', puesto: 'MECANICO', licencia: null, vigencia: null }
+  { id: 9, nombre: 'Pedro', apPaterno: 'Aguilar', apMaterno: 'Nájera', curp: 'AUNP760223HCSGJD06', telefono: '9621239876', puesto: 'MECANICO', licencia: null, vigencia: null },
+  { id: 10, nombre: 'Rosa', apPaterno: 'Cruz', apMaterno: 'Mendoza', curp: 'CUMR850101MCSRNS04', telefono: '9621112233', puesto: 'MECANICO', licencia: null, vigencia: null },
+  { id: 11, nombre: 'Ismael', apPaterno: 'Torres', apMaterno: null, curp: 'TOXI880315HCSRXS09', telefono: '9624445566', puesto: 'MECANICO', licencia: null, vigencia: null },
 ];
 
 const taquillas = [
@@ -59,7 +61,7 @@ const cuentas = [
   { id: 2, idPersonal: 6, rol: 'DESPACHADOR', idTerminal: 1, username: 'j.hernandez', password: 'zaca2026', activo: true },
   { id: 3, idPersonal: 7, rol: 'DESPACHADOR', idTerminal: 2, username: 'c.ramos', password: 'zaca2026', activo: true },
   { id: 4, idPersonal: 4, rol: 'TAQUILLERO', idTerminal: 1, username: 'm.constantino', password: 'zaca2026', activo: true },
-  { id: 5, idPersonal: 5, rol: 'TAQUILLERO', idTerminal: 2, username: 'a.lopez', password: 'zaca2026', activo: true }
+  { id: 5, idPersonal: 5, rol: 'TAQUILLERO', idTerminal: 2, username: 'a.lopez', password: 'zaca2026', activo: true },
 ];
 
 // Salidas en medias horas alrededor de ahora: una ya salió y el resto está por salir.
@@ -82,6 +84,27 @@ for (const dias of [0, 1]) {
   HORARIO.forEach((h, i) => viajes.push({ id: viajes.length + 1, idRuta: i % 3 === 1 ? 2 : 1, fechaSalida: `${enDias(dias)}T${h}`,
     idUnidad: [1, 4, 2][i % 3], idConductor: [1, 2][i % 2], estado: 'PROGRAMADO' }));
 }
+
+// --- Módulo Taller: en producción vive en taller_db y ZACA lo lee/escribe por FDW. Aquí se simula en el mismo estado, con las mismas tablas. ---
+const estadosTaller = [
+  { id: 1, nombre: 'OPERATIVO' }, { id: 2, nombre: 'MANTENIMIENTO PREVENTIVO' },
+  { id: 3, nombre: 'MANTENIMIENTO CORRECTIVO' }, { id: 4, nombre: 'DE BAJA' }
+];
+const hora8 = n => `${enDias(n)}T08:00`;
+const busesTaller = [
+  { placa: 'CHS-1201', idEstado: 1, ultimaFechaIngreso: hora8(-40), observaciones: null },
+  { placa: 'CHS-0703', idEstado: 1, ultimaFechaIngreso: hora8(-25), observaciones: null },
+  { placa: 'CHS-0315', idEstado: 3, ultimaFechaIngreso: hora8(-3), observaciones: 'Falla en caja de velocidades' },
+  { placa: 'CHS-1488', idEstado: 1, ultimaFechaIngreso: hora8(-60), observaciones: null }
+];
+// fechaSalida null = orden abierta; mientras está abierta, costo es un estimado.
+const ordenes = [
+  { id: 1, placa: 'CHS-0315', idMecanico: 11, fechaIngreso: hora8(-90), fechaSalida: `${enDias(-86)}T17:00`, diagnostico: 'Cambio de embrague', costo: 12400 },
+  { id: 2, placa: 'CHS-1488', idMecanico: 11, fechaIngreso: hora8(-60), fechaSalida: `${enDias(-59)}T14:00`, diagnostico: 'Alineación y balanceo', costo: 1350 },
+  { id: 3, placa: 'CHS-1201', idMecanico: 10, fechaIngreso: hora8(-40), fechaSalida: `${enDias(-38)}T17:00`, diagnostico: 'Cambio de balatas y revisión de frenos', costo: 4850 },
+  { id: 4, placa: 'CHS-0703', idMecanico: 10, fechaIngreso: hora8(-25), fechaSalida: `${enDias(-24)}T18:00`, diagnostico: 'Servicio preventivo a 240,000 km', costo: 7200 },
+  { id: 5, placa: 'CHS-0315', idMecanico: 9, fechaIngreso: hora8(-3), fechaSalida: null, diagnostico: 'Falla en caja de velocidades', costo: 18500 }
+];
 
 const titulares = [
   ['María López Pérez', 'LOPM900514MCSPRR01'], ['José Ramírez Cruz', 'INE 1234567890'], ['Lucía Hernández Gómez', 'HEGL020101MCSRMC09'],
@@ -110,4 +133,4 @@ const ventas = ventasBase.map(([idViaje, idTaquilla, o, d, asientos, abordado], 
     reemplazaA: null, escaneadoEn: abordado ? hoy.toISOString() : null, idCuenta: idTaquilla === 1 ? 4 : 5 };
 });
 
-export const semilla = { terminales, rutas, tarifas, unidades, personal, taquillas, cuentas, viajes, ventas, turnos: [], bitacora: [] };
+export const semilla = { terminales, rutas, tarifas, unidades, personal, taquillas, cuentas, viajes, ventas, turnos: [], bitacora: [], estadosTaller, busesTaller, ordenes };

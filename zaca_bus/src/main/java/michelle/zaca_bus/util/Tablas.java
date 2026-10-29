@@ -10,6 +10,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
 
 /** Piezas que repiten las pantallas de lista: celdas de texto, botón Editar y buscador. */
 public final class Tablas {
@@ -40,6 +41,43 @@ public final class Tablas {
             protected void updateItem(Void vacio, boolean esVacia) {
                 super.updateItem(vacio, esVacia);
                 setGraphic(esVacia ? null : editar);
+            }
+        });
+    }
+
+    /** Columna de acciones con un solo botón de texto libre que entrega la fila de esa celda. */
+    public static <T> void columnaEditar(TableColumn<T, Void> columna, Consumer<T> alPulsar, String texto) {
+        columna.setCellFactory(c -> new TableCell<>() {
+            private final Button boton = botonChico(texto);
+
+            {
+                boton.setOnAction(e -> alPulsar.accept(getTableView().getItems().get(getIndex())));
+            }
+
+            @Override
+            protected void updateItem(Void vacio, boolean esVacia) {
+                super.updateItem(vacio, esVacia);
+                setGraphic(esVacia ? null : boton);
+            }
+        });
+    }
+
+    /** Columna de acciones con "Editar" y un segundo botón (por ejemplo "Horarios"); ambos entregan la fila de esa celda. */
+    public static <T> void columnaEditar(TableColumn<T, Void> columna, Consumer<T> alEditar, String otro, Consumer<T> alOtro) {
+        columna.setCellFactory(c -> new TableCell<>() {
+            private final Button editar = botonChico("Editar");
+            private final Button segundo = botonChico(otro);
+            private final HBox cajas = new HBox(6, editar, segundo);
+
+            {
+                editar.setOnAction(e -> alEditar.accept(getTableView().getItems().get(getIndex())));
+                segundo.setOnAction(e -> alOtro.accept(getTableView().getItems().get(getIndex())));
+            }
+
+            @Override
+            protected void updateItem(Void vacio, boolean esVacia) {
+                super.updateItem(vacio, esVacia);
+                setGraphic(esVacia ? null : cajas);
             }
         });
     }

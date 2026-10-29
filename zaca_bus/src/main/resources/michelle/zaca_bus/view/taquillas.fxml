@@ -11,7 +11,7 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane styleClass="pagina" fx:controller="michelle.zaca_bus.controller.TaquillasController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane styleClass="pagina" fx:controller="michelle.zaca_bus.controller.admin_controller.TaquillasController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
     <left>
         <fx:include source="barra-administrador.fxml"/>
     </left>
@@ -19,32 +19,28 @@
         <ScrollPane fitToWidth="true" styleClass="pagina-scroll">
             <VBox styleClass="contenido" spacing="20">
                 <VBox spacing="2">
-                    <Label text="Taquillas" styleClass="titulo-pagina"/>
-                    <Label text="Cada ventanilla tiene su serie y rango de folios para que ningún ticket se repita." styleClass="texto-sec"/>
+                    <Label text="Terminales" styleClass="titulo-pagina"/>
+                    <Label text="Cada terminal es una ciudad. Abra su detalle para ver y administrar sus taquillas." styleClass="texto-sec"/>
                 </VBox>
                 <Label fx:id="lblMensaje" styleClass="alerta, alerta-error" maxWidth="Infinity" wrapText="true" visible="false" managed="false"/>
                 <VBox styleClass="tarjeta">
                     <HBox styleClass="tarjeta-cabeza" spacing="10" alignment="CENTER_LEFT">
-                        <Label text="Taquillas" styleClass="tarjeta-titulo"/>
+                        <Label text="Terminales" styleClass="tarjeta-titulo"/>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <TextField fx:id="txtBuscar" promptText="Taquilla, serie o terminal…" styleClass="text-field, text-input, buscador"/>
-                        <Button text="+ Nueva taquilla" styleClass="boton, boton-primario" onAction="#nuevaTaquilla"/>
+                        <TextField fx:id="txtBuscar" promptText="Terminal…" styleClass="text-field, text-input, buscador"/>
+                        <Button text="+ Nueva terminal" styleClass="boton, boton-primario" onAction="#nuevaTerminal"/>
                     </HBox>
                     <TableView fx:id="tabla" styleClass="table-view, tabla" VBox.vgrow="ALWAYS" prefHeight="420" minHeight="420">
                         <columns>
-                            <TableColumn fx:id="colIdentificador" text="Taquilla" prefWidth="100" sortable="false" reorderable="false"/>
-                            <TableColumn fx:id="colTerminal" text="Terminal" prefWidth="160" sortable="false" reorderable="false"/>
-                            <TableColumn fx:id="colSerie" text="Serie" prefWidth="80" sortable="false" reorderable="false"/>
-                            <TableColumn fx:id="colRango" text="Rango" prefWidth="130" sortable="false" reorderable="false"/>
-                            <TableColumn fx:id="colUsados" text="Folios usados" prefWidth="130" sortable="false" reorderable="false"/>
-                            <TableColumn fx:id="colEstado" text="Estado" prefWidth="100" sortable="false" reorderable="false"/>
-                            <TableColumn fx:id="colAcciones" prefWidth="90" sortable="false" reorderable="false"/>
+                            <TableColumn fx:id="colTerminal" text="Terminal" prefWidth="260" sortable="false" reorderable="false"/>
+                            <TableColumn fx:id="colTaquillas" text="Taquillas" prefWidth="160" sortable="false" reorderable="false"/>
+                            <TableColumn fx:id="colAcciones" prefWidth="110" sortable="false" reorderable="false"/>
                         </columns>
                         <columnResizePolicy>
                             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
                         </columnResizePolicy>
                         <placeholder>
-                            <Label text="Aún no hay taquillas." styleClass="tabla-vacia"/>
+                            <Label text="Aún no hay terminales." styleClass="tabla-vacia"/>
                         </placeholder>
                     </TableView>
                 </VBox>

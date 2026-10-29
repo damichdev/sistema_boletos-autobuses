@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<!-- Ventana para registrar el ingreso de un autobús a taller. El aviso lista las salidas programadas que se verán afectadas. -->
+<StackPane styleClass="ventana-sombra" fx:controller="michelle.zaca_bus.controller.VistaController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+    <VBox styleClass="ventana" prefWidth="620" maxWidth="620" maxHeight="-Infinity">
+        <HBox styleClass="ventana-titulo" alignment="CENTER_LEFT">
+            <Label fx:id="lblTitulo" text="Registrar ingreso de autobús" styleClass="ventana-titulo-texto"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="×" styleClass="boton, cerrar-x" onAction="#cerrar"/>
+        </HBox>
+        <VBox styleClass="ventana-cuerpo" spacing="16">
+            <GridPane hgap="14" vgap="14">
+                <columnConstraints>
+                    <ColumnConstraints percentWidth="50.0" hgrow="ALWAYS"/>
+                    <ColumnConstraints percentWidth="50.0" hgrow="ALWAYS"/>
+                </columnConstraints>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                    <Label text="UNIDAD" styleClass="campo-etiqueta"/>
+                    <ComboBox fx:id="cbUnidad" promptText="Unidad" maxWidth="Infinity"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                    <Label text="MECÁNICO" styleClass="campo-etiqueta"/>
+                    <ComboBox fx:id="cbMecanico" promptText="Mecánico" maxWidth="Infinity"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                    <Label text="TIPO DE MANTENIMIENTO" styleClass="campo-etiqueta"/>
+                    <ComboBox fx:id="cbTipo" promptText="Preventivo / correctivo" maxWidth="Infinity"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                    <Label text="FECHA DE INGRESO" styleClass="campo-etiqueta"/>
+                    <DatePicker fx:id="dpIngreso" promptText="aaaa-mm-dd" maxWidth="Infinity"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="2">
+                    <Label text="HORA DE INGRESO" styleClass="campo-etiqueta"/>
+                    <TextField fx:id="txtHoraIngreso" promptText="hh:mm" styleClass="text-field, text-input, mono"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                    <Label text="COSTO ESTIMADO ($)" styleClass="campo-etiqueta"/>
+                    <TextField fx:id="txtCosto" promptText="Costo estimado" styleClass="text-field, text-input, mono"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="3" GridPane.columnSpan="2">
+                    <Label text="DIAGNÓSTICO INICIAL" styleClass="campo-etiqueta"/>
+                    <TextField fx:id="txtDiagnostico" promptText="Diagnóstico inicial" styleClass="text-field, text-input"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="4" GridPane.columnSpan="2">
+                    <Label text="OBSERVACIONES DEL BUS" styleClass="campo-etiqueta"/>
+                    <TextField fx:id="txtObservaciones" promptText="Observaciones (opcional)" styleClass="text-field, text-input"/>
+                </VBox>
+                <Label fx:id="lblAviso" styleClass="alerta, alerta-aviso" maxWidth="Infinity" wrapText="true" visible="false" managed="false" GridPane.columnIndex="0" GridPane.rowIndex="5" GridPane.columnSpan="2"/>
+            </GridPane>
+            <Label fx:id="lblError" styleClass="alerta, alerta-error" maxWidth="Infinity" wrapText="true" visible="false" managed="false"/>
+        </VBox>
+        <HBox styleClass="ventana-pie" spacing="10" alignment="CENTER_RIGHT">
+            <Button text="Cancelar" styleClass="boton, boton-secundario" onAction="#cerrar"/>
+            <Button text="Registrar ingreso" styleClass="boton, boton-primario" onAction="#cerrar"/>
+        </HBox>
+    </VBox>
+</StackPane>

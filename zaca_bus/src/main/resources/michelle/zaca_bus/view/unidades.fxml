@@ -12,7 +12,7 @@
 <?import javafx.scene.layout.VBox?>
 
 <!-- La columna "Estado" (en taller) se agrega cuando exista la consulta a taller_db por FDW. -->
-<BorderPane styleClass="pagina" fx:controller="michelle.zaca_bus.controller.UnidadesController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane styleClass="pagina" fx:controller="michelle.zaca_bus.controller.admin_controller.UnidadesController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
     <left>
         <fx:include source="barra-administrador.fxml"/>
     </left>

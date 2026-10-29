@@ -9,7 +9,7 @@
 <?import javafx.scene.layout.VBox?>
 
 <!-- Alta rápida genérica para un catálogo simple (ciudad, tipo de bus, acomodo…). -->
-<StackPane styleClass="ventana-sombra" fx:controller="michelle.zaca_bus.controller.CatalogoController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+<StackPane styleClass="ventana-sombra" fx:controller="michelle.zaca_bus.controller.admin_controller.CatalogoController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
     <VBox styleClass="ventana" prefWidth="460" maxWidth="460" maxHeight="-Infinity">
         <HBox styleClass="ventana-titulo" alignment="CENTER_LEFT">
             <Label fx:id="lblTitulo" styleClass="ventana-titulo-texto"/>

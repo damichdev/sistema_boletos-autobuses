@@ -16,7 +16,7 @@
 <?import javafx.scene.layout.VBox?>
 
 <!-- Vista de tableta (clase "tableta"). La tabla muestra todas las salidas de hoy hasta que el login diga la terminal del despachador. -->
-<BorderPane styleClass="pagina, tableta" fx:controller="michelle.zaca_bus.controller.ProgramarSalidaController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane styleClass="pagina, tableta" fx:controller="michelle.zaca_bus.controller.despachador_controller.ProgramarSalidaController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
     <left>
         <fx:include source="barra-despachador.fxml"/>
     </left>
@@ -46,7 +46,7 @@
                         </VBox>
                         <VBox spacing="6" styleClass="campo" GridPane.columnIndex="2" GridPane.rowIndex="0">
                             <Label text="HORA DE SALIDA" styleClass="campo-etiqueta"/>
-                            <TextField fx:id="txtHora" promptText="hh:mm" styleClass="text-field, text-input, mono"/>
+                            <ComboBox fx:id="cbHorario" promptText="Elija el horario" maxWidth="Infinity"/>
                         </VBox>
                         <VBox spacing="6" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="1">
                             <Label text="UNIDAD" styleClass="campo-etiqueta"/>
@@ -57,6 +57,10 @@
                             <ComboBox fx:id="cbChofer" promptText="Elija al chofer" maxWidth="Infinity"/>
                         </VBox>
                     </GridPane>
+                    <VBox fx:id="boxPrevia" spacing="8" visible="false" managed="false">
+                        <Label text="HORAS ESTIMADAS DE PASO" styleClass="campo-etiqueta"/>
+                        <VBox fx:id="boxPasos" spacing="6"/>
+                    </VBox>
                     <HBox>
                         <Region HBox.hgrow="ALWAYS"/>
                         <Button text="Guardar salida" styleClass="boton, boton-primario, boton-grande" onAction="#guardar"/>
