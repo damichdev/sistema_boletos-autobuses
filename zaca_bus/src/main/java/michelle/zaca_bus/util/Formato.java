@@ -12,6 +12,7 @@ public final class Formato {
     public static final ZoneId ZONA = ZoneId.of("America/Mexico_City");
 
     private static final DateTimeFormatter HORA = DateTimeFormatter.ofPattern("HH:mm");
+    private static final DateTimeFormatter FECHA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private Formato() {
     }
@@ -19,6 +20,11 @@ public final class Formato {
     /** $1,250.00, o un guion si el monto no está capturado. */
     public static String dinero(BigDecimal monto) {
         return monto == null ? "—" : String.format(Locale.forLanguageTag("es-MX"), "$%,.2f", monto);
+    }
+
+    /** 02/11/2026 08:30 */
+    public static String fechaHora(ZonedDateTime fecha) {
+        return fecha.format(FECHA_HORA);
     }
 
     /** 08:30 */

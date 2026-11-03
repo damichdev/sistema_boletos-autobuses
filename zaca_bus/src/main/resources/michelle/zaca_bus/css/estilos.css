@@ -1,8 +1,4 @@
-/* =====================================================================
-   Zaca - Hoja de estilos única (paleta "pizarra y naranja de señalización",
-   docs/2026-10-24-diseno-vistas.md). Los colores viven aquí; el FXML solo
-   usa clases de estilo. El naranja va SOLO en acciones.
-   ===================================================================== */
+
 
 .root {
     -color-barra:            #252B33;
@@ -130,7 +126,7 @@
 .tabla .column-header-background { -fx-background-color: -color-cabeza; }
 .tabla .column-header { -fx-background-color: -color-cabeza; -fx-border-color: transparent transparent -color-linea transparent; -fx-size: 40; }
 .tabla .column-header .label { -fx-text-fill: -color-texto-2; -fx-font-size: 12px; -fx-font-weight: bold; -fx-alignment: CENTER_LEFT; }
-.tabla .table-row-cell { -fx-background-color: white; -fx-border-color: transparent transparent -color-linea transparent; -fx-cell-size: 46; }
+.tabla .table-row-cell { -fx-background-color: rgb(255, 255, 255); -fx-border-color: transparent transparent -color-linea transparent; -fx-cell-size: 46; }
 .tabla .table-row-cell:empty { -fx-background-color: transparent; -fx-border-color: transparent; }
 .tabla .table-row-cell:selected { -fx-background-color: -color-accion-suave; }
 .tabla .table-cell { -fx-padding: 0 16 0 16; -fx-alignment: CENTER_LEFT; }
@@ -214,8 +210,6 @@
 .ticket .label { -fx-font-family: "Consolas"; }
 .ticket-marca { -fx-font-weight: bold; -fx-font-size: 15px; }
 .ticket-asientos { -fx-font-size: 20px; -fx-font-weight: bold; }
-.qr { -fx-fill: white; -fx-stroke: -color-texto; -fx-stroke-width: 2; -fx-stroke-dash-array: 6 4; }
-.qr-texto { -fx-font-weight: bold; -fx-font-size: 22px; -fx-text-fill: -color-texto-2; }
 
 /* ---------- Abrir turno ---------- */
 .ventanilla { -fx-padding: 22; }

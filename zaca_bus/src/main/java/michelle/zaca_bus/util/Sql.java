@@ -43,6 +43,17 @@ public final class Sql {
         }
     }
 
+    /** El mensaje de un RAISE de la base llega como "ERROR: texto
+  Where: ..."; el usuario solo debe ver el texto. */
+    private static SQLException limpio(SQLException e) {
+        String m = e.getMessage();
+        if (m == null || !m.startsWith("ERROR: ")) {
+            return e;
+        }
+        int fin = m.indexOf('\n');
+        return new SQLException(m.substring(7, fin < 0 ? m.length() : fin).trim(), e.getSQLState(), e.getErrorCode(), e);
+    }
+
     /** Todo lo de `accion` se guarda junto o no se guarda nada. */
     public static void transaccion(Accion accion) throws SQLException {
         Connection con = ConexionBD.getInstancia().getConexion();
@@ -50,7 +61,10 @@ public final class Sql {
         try {
             accion.ejecutar(con);
             con.commit();
-        } catch (SQLException | RuntimeException e) {
+        } catch (SQLException e) {
+            con.rollback();
+            throw limpio(e);
+        } catch (RuntimeException e) {
             con.rollback();
             throw e;
         } finally {

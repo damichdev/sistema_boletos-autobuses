@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<!-- Alta y edición de talleres. El encargado es opcional: puede asignarse después. -->
+<StackPane styleClass="ventana-sombra" fx:controller="michelle.zaca_bus.controller.admin.TalleresController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+    <VBox styleClass="ventana" prefWidth="760" maxWidth="760" maxHeight="-Infinity">
+        <HBox styleClass="ventana-titulo" alignment="CENTER_LEFT">
+            <VBox spacing="2">
+                <Label fx:id="lblTitulo" text="NUEVO TALLER" styleClass="ventana-titulo-texto"/>
+                <Label text="Registre una nueva instalación física para el mantenimiento de la flota asignada a una ciudad." styleClass="texto-sec"/>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="×" styleClass="boton, cerrar-x" onAction="#cerrar"/>
+        </HBox>
+        <VBox styleClass="ventana-cuerpo" spacing="16">
+            <GridPane hgap="18" vgap="12">
+                <columnConstraints>
+                    <ColumnConstraints percentWidth="50.0" hgrow="ALWAYS"/>
+                    <ColumnConstraints percentWidth="50.0" hgrow="ALWAYS"/>
+                </columnConstraints>
+                <VBox spacing="4" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                    <Label text="CIUDAD" styleClass="campo-etiqueta"/>
+                    <ComboBox fx:id="cbCiudad" promptText="Ciudad" maxWidth="Infinity"/>
+                </VBox>
+                <VBox spacing="4" styleClass="campo" GridPane.columnIndex="1" GridPane.rowIndex="0" GridPane.rowSpan="2">
+                    <Label text="DIRECCIÓN" styleClass="campo-etiqueta"/>
+                    <TextArea fx:id="txtDireccion" prefRowCount="4" wrapText="true"/>
+                    <Label text="Ubicación física exacta del taller" styleClass="texto-sec"/>
+                </VBox>
+                <VBox spacing="4" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                    <Label text="CLAVE / IDENTIFICADOR" styleClass="campo-etiqueta"/>
+                    <TextField fx:id="txtClave" promptText="TAL-03" styleClass="text-field, text-input, mono"/>
+                    <Label text="Prefijo único (Ej: TAL-03)" styleClass="texto-sec"/>
+                </VBox>
+                <VBox spacing="4" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="2">
+                    <Label text="NOMBRE DEL TALLER" styleClass="campo-etiqueta"/>
+                    <TextField fx:id="txtNombre" promptText="Taller Norte Express" styleClass="text-field, text-input"/>
+                    <Label text="Nombre identificativo" styleClass="texto-sec"/>
+                </VBox>
+                <VBox spacing="4" styleClass="campo" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                    <Label text="ENCARGADO ASIGNADO" styleClass="campo-etiqueta"/>
+                    <ComboBox fx:id="cbEncargado" promptText="Sin asignar" maxWidth="Infinity"/>
+                    <Label text="Seleccione un empleado con puesto de jefe de taller (opcional)" styleClass="texto-sec" wrapText="true"/>
+                </VBox>
+            </GridPane>
+            <Label fx:id="lblError" styleClass="alerta, alerta-error" maxWidth="Infinity" wrapText="true" visible="false" managed="false"/>
+        </VBox>
+        <HBox styleClass="ventana-pie" spacing="10" alignment="CENTER_RIGHT">
+            <Button text="Cancelar" styleClass="boton, boton-secundario" onAction="#cerrar"/>
+            <Button text="Guardar taller" styleClass="boton, boton-primario" onAction="#guardar"/>
+        </HBox>
+    </VBox>
+</StackPane>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<!-- Ventana de nuevo acomodo. Un acomodo es tipo de servicio + distribución de asientos (2+2, 2+1, 1+1) + capacidad. -->
+<StackPane styleClass="ventana-sombra" fx:controller="michelle.zaca_bus.controller.admin.UnidadesController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+    <VBox styleClass="ventana" prefWidth="620" maxWidth="620" maxHeight="-Infinity">
+        <HBox styleClass="ventana-titulo" alignment="CENTER_LEFT">
+            <Label text="NUEVO ACOMODO / PLANTILLA" styleClass="ventana-titulo-texto"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="btnCerrar" text="×" styleClass="boton, cerrar-x" onAction="#cerrarAcomodo"/>
+        </HBox>
+        <VBox styleClass="ventana-cuerpo" spacing="16">
+            <GridPane hgap="14" vgap="14">
+                <columnConstraints>
+                    <ColumnConstraints percentWidth="50.0" hgrow="ALWAYS"/>
+                    <ColumnConstraints percentWidth="50.0" hgrow="ALWAYS"/>
+                </columnConstraints>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                    <Label text="TIPO DE SERVICIO" styleClass="campo-etiqueta"/>
+                    <ComboBox fx:id="cbServicio" promptText="Tipo de servicio" maxWidth="Infinity"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                    <Label text="DISTRIBUCIÓN DE ASIENTOS" styleClass="campo-etiqueta"/>
+                    <ComboBox fx:id="cbDistribucion" promptText="Asientos a cada lado del pasillo" maxWidth="Infinity"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                    <Label text="CAPACIDAD TOTAL" styleClass="campo-etiqueta"/>
+                    <TextField fx:id="txtCapacidad" promptText="Asientos del autobús" styleClass="text-field, text-input, mono"/>
+                </VBox>
+            </GridPane>
+            <Label text="*La distribución indica cuántos asientos hay a la izquierda y a la derecha del pasillo; la última fila puede quedar incompleta." styleClass="texto-sec" wrapText="true"/>
+            <Label fx:id="lblError" styleClass="alerta, alerta-error" maxWidth="Infinity" wrapText="true" visible="false" managed="false"/>
+        </VBox>
+        <HBox styleClass="ventana-pie" spacing="10" alignment="CENTER_RIGHT">
+            <Button text="Cancelar" styleClass="boton, boton-secundario" onAction="#cerrarAcomodo"/>
+            <Button text="Guardar Acomodo" styleClass="boton, boton-primario" onAction="#guardarAcomodo"/>
+        </HBox>
+    </VBox>
+</StackPane>

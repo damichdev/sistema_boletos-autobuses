@@ -2,6 +2,7 @@ package michelle.zaca_bus;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URL;
 import java.util.function.Consumer;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -14,6 +15,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
+import michelle.zaca_bus.util.Sesion;
 
 public class App extends Application {
 
@@ -41,6 +43,9 @@ public class App extends Application {
 
     /** Cambia la pantalla de la ventana principal y marca en la barra lateral el botón de esa vista. */
     public static void irA(String vista) {
+        if ("login".equals(vista)) {
+            Sesion.iniciar(null);
+        }
         Parent raiz = cargar(vista).getRoot();
         for (Node boton : raiz.lookupAll(".nav-boton")) {
             if (vista.equals(boton.getId())) {
@@ -72,12 +77,26 @@ public class App extends Application {
         ventana.showAndWait();
     }
 
+    /** Carpetas de la capa Vista (resources/.../view): una por rol, más `comun` para lo compartido (login). */
+    private static final String[] CARPETAS_VISTA = { "admin", "despachador", "taquillero", "jefetaller", "comun" };
+
+    /** El nombre de una vista es único en todo el proyecto, así que se busca en las carpetas de la capa Vista. */
+    private static URL ubicar(String vista) {
+        for (String carpeta : CARPETAS_VISTA) {
+            URL url = App.class.getResource("view/" + carpeta + "/" + vista + ".fxml");
+            if (url != null) {
+                return url;
+            }
+        }
+        throw new IllegalArgumentException("No existe la vista " + vista);
+    }
+
     private static FXMLLoader cargar(String vista) {
-        FXMLLoader loader = new FXMLLoader(App.class.getResource("view/" + vista + ".fxml"));
+        FXMLLoader loader = new FXMLLoader(ubicar(vista));
         try {
             loader.load();
         } catch (IOException e) {
-            throw new UncheckedIOException("No se pudo cargar view/" + vista + ".fxml", e);
+            throw new UncheckedIOException("No se pudo cargar la vista " + vista, e);
         }
         return loader;
     }

@@ -1,0 +1,799 @@
+CREATE OR REPLACE FUNCTION viajes.fn_destinos_por_salida(p_id_origen INT, p_fecha DATE)
+RETURNS TABLE (
+id_terminal INT,
+nombre_terminal TEXT
+)
+LANGUAGE sql
+AS $$
+SELECT DISTINCT t.id_terminal, t.nombre_terminal
+FROM viajes.viaje_programado vp
+INNER JOIN viajes.estado_viaje ev ON ev.id_estado_viaje = vp.id_estado_viaje
+INNER JOIN viajes.ruta_paradas o ON o.id_ruta = vp.id_ruta AND o.id_terminal = p_id_origen
+INNER JOIN viajes.ruta_paradas d ON d.id_ruta = vp.id_ruta AND d.orden > o.orden
+INNER JOIN viajes.precio_tramo pt ON pt.id_ruta = vp.id_ruta AND  pt.orden_origen = o.orden AND pt.orden_destino = d.orden
+INNER JOIN administracion.terminal t ON t.id_terminal = d.id_terminal
+WHERE (ev.nombre_estado_viaje IN ('PROGRAMADO', 'ABORDANDO')
+OR (ev.nombre_estado_viaje = 'EN RUTA' AND o.orden > (SELECT min(rp.orden) FROM viajes.ruta_paradas rp WHERE rp.id_ruta = vp.id_ruta)))
+AND vp.fecha_salida + make_interval(mins => o.min_desde_origen) > now()
+AND ((vp.fecha_salida + make_interval(mins => o.min_desde_origen))
+AT TIME ZONE 'America/Mexico_City')::date = p_fecha
+ORDER BY t.nombre_terminal;
+$$;
+
+
+
+CREATE OR REPLACE VIEW viajes.v_ruta_paradas AS
+SELECT rp.id_ruta, t.id_terminal, t.nombre_terminal, rp.km_desde_origen, rp.min_desde_origen, rp.orden
+FROM viajes.ruta_paradas rp
+INNER JOIN administracion.terminal t ON t.id_terminal = rp.id_terminal
+ORDER BY rp.id_ruta, rp.orden;
+
+
+
+CREATE OR REPLACE FUNCTION viajes.fn_validar_parada()
+RETURNS TRIGGER AS $$
+DECLARE
+v_prev_min INT;
+v_prev_km INT;
+BEGIN
+IF NEW.orden = 1 THEN
+IF NEW.min_desde_origen <> 0 OR NEW.km_desde_origen <> 0 THEN
+RAISE EXCEPTION 'La primera parada debe tener 0 minutos y 0 km desde el origen.' USING ERRCODE = 'Z0067';
+END IF;
+ELSE
+SELECT min_desde_origen, km_desde_origen INTO v_prev_min, v_prev_km
+FROM viajes.ruta_paradas
+WHERE id_ruta = NEW.id_ruta AND orden = NEW.orden -1;
+IF NOT FOUND THEN
+RAISE EXCEPTION 'Las paradas deben guardarse en orden consecutivo (falta la parada %).', NEW.orden - 1 USING ERRCODE = 'Z0067';
+END IF;
+IF NEW.min_desde_origen <= v_prev_min OR NEW.km_desde_origen < v_prev_km THEN
+RAISE EXCEPTION 'Los minutos y los kilómetros deben aumentar de una parada a la siguiente.' USING ERRCODE = 'Z0067';
+END IF;
+END IF;
+RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE TRIGGER tigresito_validar_parada
+BEFORE INSERT ON viajes.ruta_paradas
+FOR EACH ROW EXECUTE FUNCTION viajes.fn_validar_parada();
+
+
+
+
+CREATE OR REPLACE FUNCTION viajes.fn_obtener_acomodos(p_id_nombre_tipo_bus INT)
+RETURNS TABLE (id_layout INT, nombre_layout TEXT, capacidad INT)
+LANGUAGE sql
+AS $$
+SELECT l.id_layout, l.nombre_layout::TEXT, tb.capacidad
+FROM viajes.tipo_bus tb
+INNER JOIN viajes.layout l ON l.id_layout = tb.id_layout
+WHERE tb.id_nombre_tipo_bus = p_id_nombre_tipo_bus
+ORDER BY l.nombre_layout, tb.capacidad;
+$$;
+
+
+
+CREATE OR REPLACE VIEW administracion.v_terminales_detalle AS
+SELECT t.id_terminal, t.nombre_terminal, t.activo, c.id_ciudad, c.nombre_ciudad,
+       t.clave, t.direccion, t.telefono
+FROM administracion.terminal t
+INNER JOIN administracion.ciudad c ON c.id_ciudad = t.id_ciudad
+ORDER BY c.nombre_ciudad;
+
+
+
+CREATE OR REPLACE VIEW administracion.v_ciudades AS
+SELECT id_ciudad, nombre_ciudad
+FROM administracion.ciudad
+ORDER BY nombre_ciudad;
+
+
+
+--/////////////////////////////////////////////////////////////////////
+
+
+CREATE TABLE viajes.ruta(
+id_ruta INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+id_servicio INT NOT NULL,
+nombre_ruta TEXT NOT NULL UNIQUE,
+CONSTRAINT fk_servicio_ruta FOREIGN KEY(id_servicio) REFERENCES viajes.tipo_servicio(id_servicio) ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+
+CREATE OR REPLACE PROCEDURE viajes.sp_guardar_ruta(INOUT p_id_ruta INT, p_id_servicio INT, p_nombre_ruta TEXT)
+LANGUAGE plpgsql AS $$
+BEGIN
+    p_nombre_ruta := upper(btrim(p_nombre_ruta));
+    IF p_id_ruta = 0 THEN
+        INSERT INTO viajes.ruta (id_servicio, nombre_ruta) VALUES (p_id_servicio, p_nombre_ruta) RETURNING id_ruta INTO p_id_ruta;
+    ELSE
+        IF EXISTS (SELECT 1 FROM viajes.viaje_programado vp JOIN ventas.boleto b ON vp.id_viaje = b.id_viaje WHERE vp.id_ruta = p_id_ruta AND b.id_estado_boleto <> 4) THEN
+            RAISE EXCEPTION 'No se puede editar la ruta porque ya tiene boletos vigentes o abordados.' USING ERRCODE = 'Z0060';
+        END IF;
+        UPDATE viajes.ruta SET id_servicio = p_id_servicio, nombre_ruta = p_nombre_ruta WHERE id_ruta = p_id_ruta;
+        DELETE FROM viajes.ruta_paradas WHERE id_ruta = p_id_ruta;
+    END IF;
+END;
+$$;
+
+--/////////////////////////////////////////////////////////////////////
+-- RUTAS DUPLICADAS: validacion por contenido (mismo servicio y mismas terminales en el mismo orden)
+-- Se llama UNA VEZ al terminar de guardar las paradas de la ruta, dentro de la misma transaccion:
+--   CALL viajes.sp_validar_ruta_unica(<id_ruta>);
+-- Si la ruta es igual a otra ya existente lanza Z0068 y la transaccion se revierte.
+-- El nombre repetido ya lo bloquea UNIQUE(nombre_ruta) con upper(btrim()) en sp_guardar_ruta (error 23505).
+
+
+CREATE OR REPLACE PROCEDURE viajes.sp_validar_ruta_unica(p_id_ruta INT)
+LANGUAGE plpgsql AS $$
+DECLARE
+    v_nombre TEXT;
+BEGIN
+    SELECT o.nombre_ruta INTO v_nombre
+    FROM viajes.ruta r
+    INNER JOIN viajes.ruta o ON o.id_ruta <> r.id_ruta AND o.id_servicio = r.id_servicio
+    WHERE r.id_ruta = p_id_ruta
+      AND (SELECT array_agg(rp.id_terminal ORDER BY rp.orden) FROM viajes.ruta_paradas rp WHERE rp.id_ruta = r.id_ruta)
+        = (SELECT array_agg(rp.id_terminal ORDER BY rp.orden) FROM viajes.ruta_paradas rp WHERE rp.id_ruta = o.id_ruta)
+    LIMIT 1;
+
+    IF FOUND THEN
+        RAISE EXCEPTION 'Ya existe la ruta "%" con el mismo servicio y las mismas paradas en el mismo orden.', v_nombre
+            USING ERRCODE = 'Z0068';
+    END IF;
+END;
+$$;
+
+
+
+/////////////////////////////////////////////////////////////////////
+-- BOLETO INDIVIDUAL: un folio y un nombre de pasajero por cada asiento
+--
+-- QUE HACE:
+--   * La VENTA sigue siendo la nota de pago (titular, total, recibido). Cada BOLETO (asiento) pasa a tener su
+--     propio folio consecutivo de la taquilla (ej. TUX-01-002000 para el asiento 9, TUX-01-002001 para el 10)
+--     y el nombre de quien viaja en ese asiento (texto simple, sin CURP ni tabla de clientes).
+--   * venta.folio se conserva y guarda el folio del PRIMER boleto de la venta (asi no se rompe nada que ya lo lea).
+--   * Se agrega sp_cancelar_boleto para cancelar un solo asiento sin tocar los demas.
+--
+-- POR QUE:
+--   * Seguro de viajero: el boleto es el contrato individual; debe decir "Asiento 9 - Juan Perez".
+--   * Control de abordaje: se escanea un QR por pasajero; el folio de cada boleto identifica a una sola persona.
+--   * Cancelaciones parciales: con folios individuales se cancela un asiento y los demas siguen viajando.
+--
+-- NOTA: las columnas nuevas son NOT NULL sin valor por defecto, asi que este bloque solo corre sobre una
+--       tabla ventas.boleto VACIA (falla si hay boletos con el esquema anterior).
+
+
+-- 1) Columnas nuevas del boleto
+ALTER TABLE ventas.boleto
+    ADD COLUMN IF NOT EXISTS id_taquilla INT NOT NULL,
+    ADD COLUMN IF NOT EXISTS folio INT NOT NULL,
+    ADD COLUMN IF NOT EXISTS nombre_pasajero TEXT NOT NULL;
+
+ALTER TABLE ventas.boleto
+    ADD CONSTRAINT fk_taquilla_boleto FOREIGN KEY (id_taquilla) REFERENCES administracion.taquilla(id_taquilla) ON DELETE RESTRICT ON UPDATE CASCADE,
+    ADD CONSTRAINT unique_folio_boleto UNIQUE (id_taquilla, folio),
+    ADD CONSTRAINT check_nombre_pasajero CHECK (btrim(nombre_pasajero) <> '');
+
+
+-- 2) El abordaje y el manifiesto leen el folio y el nombre del boleto, no de la venta
+CREATE OR REPLACE VIEW ventas.v_boletos_abordaje AS
+SELECT b.id_boleto,
+       b.id_viaje,
+       b.num_asiento,
+       eb.nombre_estado_boleto AS estado_boleto,
+       upper(q.serie_folio || '-' || lpad(b.folio::text, 6, '0')) AS folio_impreso
+FROM ventas.boleto b
+INNER JOIN administracion.taquilla q ON q.id_taquilla = b.id_taquilla
+INNER JOIN ventas.estado_boleto eb ON eb.id_estado_boleto = b.id_estado_boleto;
+
+
+CREATE OR REPLACE VIEW ventas.v_manifiesto_detallado AS
+SELECT b.id_viaje,
+       b.id_terminal_origen,
+       b.num_asiento,
+       b.nombre_pasajero AS nombre_completo,
+       td.nombre_terminal AS destino,
+       tar.nombre_tarifa,
+       upper(q.serie_folio || '-' || lpad(b.folio::text, 6, '0')) AS folio_impreso,
+       CASE
+           WHEN eb.nombre_estado_boleto = 'ABORDADO' THEN 'Abordó'
+           WHEN ev.nombre_estado_viaje IN ('EN RUTA', 'CERRADO')
+                AND vp.fecha_salida + make_interval(mins => rp.min_desde_origen) <= now() THEN 'No se presentó'
+           ELSE 'Pendiente'
+       END AS estatus_abordaje,
+       eb.nombre_estado_boleto
+FROM ventas.boleto b
+INNER JOIN administracion.taquilla q ON q.id_taquilla = b.id_taquilla
+INNER JOIN administracion.terminal td ON td.id_terminal = b.id_terminal_destino
+INNER JOIN ventas.tarifa tar ON tar.id_tarifa = b.id_tarifa
+INNER JOIN ventas.estado_boleto eb ON eb.id_estado_boleto = b.id_estado_boleto
+INNER JOIN viajes.viaje_programado vp ON vp.id_viaje = b.id_viaje
+INNER JOIN viajes.estado_viaje ev ON ev.id_estado_viaje = vp.id_estado_viaje
+INNER JOIN viajes.ruta_paradas rp ON rp.id_ruta = vp.id_ruta AND rp.id_terminal = b.id_terminal_origen;
+
+
+-- 3) Registrar la venta: ahora recibe un nombre por asiento (p_nombres, en el mismo orden que p_asientos)
+--    y consume un folio por asiento. p_folio devuelve el folio del primer boleto.
+DROP PROCEDURE IF EXISTS ventas.sp_registrar_venta(INT, INT, INT, INT, INT, INT, INT, TEXT, TEXT, TEXT, TEXT, INT[], INT[], NUMERIC, INT);
+
+CREATE OR REPLACE PROCEDURE ventas.sp_registrar_venta(INOUT p_id_venta INT, INOUT p_folio INT,
+    p_id_app INT, p_id_turno INT, p_id_viaje INT, p_id_origen INT, p_id_destino INT,
+    p_nombre TEXT, p_ap_paterno TEXT, p_ap_materno TEXT, p_curp TEXT,
+    p_asientos INT[], p_tarifas INT[], p_nombres TEXT[], p_recibido NUMERIC, p_reemplaza_a INT DEFAULT NULL)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, pg_temp AS $$
+DECLARE
+  v_rol TEXT; v_taquilla INT; v_activo BOOLEAN;
+  v_t administracion.taquilla%ROWTYPE;
+  v_id_ruta INT; v_estado TEXT; v_oo INT; v_od INT; v_precio NUMERIC;
+  v_total NUMERIC; v_pasajero INT; v_n INT; v_asientos INT;
+BEGIN
+  SELECT r.nombre_rol, p.id_taquilla, (pa.activo AND p.activo) INTO v_rol, v_taquilla, v_activo
+  FROM administracion.personal_app pa JOIN administracion.personal p ON p.id_personal = pa.id_personal
+  JOIN administracion.rol r ON r.id_rol = pa.id_rol WHERE pa.id_app = p_id_app;
+  IF NOT FOUND OR NOT v_activo OR v_rol <> 'TAQUILLERO' THEN
+    RAISE EXCEPTION 'Solo un taquillero activo puede vender.' USING ERRCODE = 'Z0040';
+  END IF;
+  IF v_taquilla IS NULL THEN RAISE EXCEPTION 'El taquillero no tiene taquilla asignada.' USING ERRCODE = 'Z0040'; END IF;
+  v_asientos := COALESCE(array_length(p_asientos, 1), 0);
+  IF v_asientos = 0 OR v_asientos <> COALESCE(array_length(p_tarifas, 1), 0)
+     OR v_asientos <> COALESCE(array_length(p_nombres, 1), 0) THEN
+    RAISE EXCEPTION 'Indique un asiento, una tarifa y un nombre de pasajero por boleto.' USING ERRCODE = 'Z0044';
+  END IF;
+  IF EXISTS (SELECT 1 FROM unnest(p_nombres) n WHERE n IS NULL OR btrim(n) = '') THEN
+    RAISE EXCEPTION 'Falta el nombre de un pasajero.' USING ERRCODE = 'Z0044';
+  END IF;
+  IF (SELECT count(DISTINCT a) FROM unnest(p_asientos) a) <> v_asientos THEN
+    RAISE EXCEPTION 'Hay asientos repetidos en la venta.' USING ERRCODE = 'Z0044';
+  END IF;
+  SELECT * INTO v_t FROM administracion.taquilla WHERE id_taquilla = v_taquilla FOR UPDATE;
+  IF NOT v_t.activo THEN RAISE EXCEPTION 'La taquilla está inactiva.' USING ERRCODE = 'Z0040'; END IF;
+  SELECT vp.id_ruta, ev.nombre_estado_viaje INTO v_id_ruta, v_estado
+  FROM viajes.viaje_programado vp JOIN viajes.estado_viaje ev ON ev.id_estado_viaje = vp.id_estado_viaje WHERE vp.id_viaje = p_id_viaje;
+  IF NOT FOUND THEN RAISE EXCEPTION 'El viaje no existe.' USING ERRCODE = 'Z0042'; END IF;
+  IF v_estado = 'CERRADO' THEN RAISE EXCEPTION 'El viaje ya está cerrado.' USING ERRCODE = 'Z0042'; END IF;
+  SELECT orden INTO v_oo FROM viajes.ruta_paradas WHERE id_ruta = v_id_ruta AND id_terminal = p_id_origen;
+  SELECT orden INTO v_od FROM viajes.ruta_paradas WHERE id_ruta = v_id_ruta AND id_terminal = p_id_destino;
+  SELECT precio INTO v_precio FROM viajes.precio_tramo WHERE id_ruta = v_id_ruta AND orden_origen = v_oo AND orden_destino = v_od;
+  IF v_precio IS NULL THEN RAISE EXCEPTION 'No hay precio definido para ese tramo.' USING ERRCODE = 'Z0042'; END IF;
+  IF p_reemplaza_a IS NOT NULL THEN
+    CALL ventas.sp_cancelar_venta(p_reemplaza_a, p_id_app);
+  END IF;
+  SELECT COALESCE(sum(round(v_precio * (1 - t.descuento), 2)), 0), count(t.id_tarifa) INTO v_total, v_n
+  FROM unnest(p_tarifas) x JOIN ventas.tarifa t ON t.id_tarifa = x;
+  IF v_n <> v_asientos THEN RAISE EXCEPTION 'Hay una tarifa que no existe.' USING ERRCODE = 'Z0044'; END IF;
+  IF p_recibido < v_total THEN
+    RAISE EXCEPTION 'El dinero recibido (%) no cubre el total (%).', p_recibido, v_total USING ERRCODE = 'Z0043';
+  END IF;
+  -- Un folio por boleto: la venta ocupa v_asientos folios seguidos y su folio es el del primer boleto
+  p_folio := v_t.rango_inicial + v_t.folios_usados;
+  IF p_folio + v_asientos - 1 > v_t.rango_final THEN
+    RAISE EXCEPTION 'La taquilla no tiene folios suficientes para %  boletos.', v_asientos USING ERRCODE = 'Z0041';
+  END IF;
+  IF p_curp IS NOT NULL AND btrim(p_curp) <> '' THEN
+    INSERT INTO ventas.pasajero (nombre_pasajero, ap_paterno, ap_materno, curp)
+    VALUES (btrim(p_nombre), btrim(p_ap_paterno), btrim(p_ap_materno), upper(btrim(p_curp)))
+    ON CONFLICT (curp) DO UPDATE SET nombre_pasajero = EXCLUDED.nombre_pasajero,
+      ap_paterno = EXCLUDED.ap_paterno, ap_materno = EXCLUDED.ap_materno
+    RETURNING id_pasajero INTO v_pasajero;
+  ELSE
+    INSERT INTO ventas.pasajero (nombre_pasajero, ap_paterno, ap_materno)
+    VALUES (btrim(p_nombre), btrim(p_ap_paterno), btrim(p_ap_materno)) RETURNING id_pasajero INTO v_pasajero;
+  END IF;
+  INSERT INTO ventas.venta (id_taquilla, folio, id_titular, id_vendedor, id_turno, total_pagado, recibido, reemplaza_a)
+  VALUES (v_taquilla, p_folio, v_pasajero, p_id_app, p_id_turno, v_total, p_recibido, p_reemplaza_a)
+  RETURNING id_venta INTO p_id_venta;
+  INSERT INTO ventas.boleto (id_venta, id_taquilla, folio, nombre_pasajero, id_viaje, id_terminal_origen, id_terminal_destino,
+                             num_asiento, tramo_ocupacion, id_tarifa, id_estado_boleto, precio_unitario)
+  SELECT p_id_venta, v_taquilla, p_folio + a.n - 1, btrim(a.nombre), p_id_viaje, p_id_origen, p_id_destino,
+         a.asiento, int4range(v_oo, v_od, '[)'), a.tarifa, 1, round(v_precio * (1 - t.descuento), 2)
+  FROM unnest(p_asientos, p_tarifas, p_nombres) WITH ORDINALITY AS a(asiento, tarifa, nombre, n)
+  JOIN ventas.tarifa t ON t.id_tarifa = a.tarifa;
+  UPDATE administracion.taquilla SET folios_usados = folios_usados + v_asientos WHERE id_taquilla = v_taquilla;
+END $$;
+
+
+-- 4) Cancelar UN boleto (un asiento). Si era el ultimo boleto vigente de la venta, la venta tambien queda cancelada.
+--    El monto a devolver es boleto.precio_unitario.
+CREATE OR REPLACE PROCEDURE ventas.sp_cancelar_boleto(p_id_boleto INT, p_id_app INT)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, pg_temp AS $$
+DECLARE
+  v_rol TEXT;
+  v_venta INT;
+  v_estado INT;
+BEGIN
+  SELECT r.nombre_rol INTO v_rol FROM administracion.personal_app pa JOIN administracion.rol r ON r.id_rol = pa.id_rol
+  WHERE pa.id_app = p_id_app AND pa.activo;
+  IF v_rol IS NULL OR v_rol NOT IN ('TAQUILLERO', 'ADMINISTRADOR') THEN
+    RAISE EXCEPTION 'No tiene permiso para cancelar boletos.' USING ERRCODE = 'Z0040';
+  END IF;
+  SELECT id_venta, id_estado_boleto INTO v_venta, v_estado FROM ventas.boleto WHERE id_boleto = p_id_boleto FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'El boleto no existe.' USING ERRCODE = 'Z0045'; END IF;
+  IF v_estado = 4 THEN RAISE EXCEPTION 'El boleto ya estaba cancelado.' USING ERRCODE = 'Z0045'; END IF;
+  IF v_estado = 3 THEN RAISE EXCEPTION 'El pasajero de este boleto ya abordó.' USING ERRCODE = 'Z0045'; END IF;
+  UPDATE ventas.boleto SET id_estado_boleto = 4 WHERE id_boleto = p_id_boleto;
+  IF NOT EXISTS (SELECT 1 FROM ventas.boleto WHERE id_venta = v_venta AND id_estado_boleto <> 4) THEN
+    UPDATE ventas.venta SET cancelada_por = p_id_app, cancelada_en = now() WHERE id_venta = v_venta;
+  END IF;
+END $$;
+
+
+
+-- TAQUILLAS: orden de la lista y prefijo de folios en mayusculas
+--
+-- QUE HACE:
+--   1) v_taquillas ordena por terminal y luego por orden de alta (id_taquilla), no por el texto del identificador.
+--   2) sp_guardar_taquilla guarda identificador y prefijo (serie_folio) en MAYUSCULAS y sin espacios sobrantes.
+--   3) Pone en mayusculas los prefijos ya guardados (Tap-1 -> TAP-1).
+--
+-- POR QUE:
+--   1) Ordenando por texto, PostgreSQL ignora el guion al comparar y "TAQ-04" salia antes que "TAQ-1":
+--      las taquillas aparecian desordenadas.
+--   2) La restriccion UNIQUE(serie_folio) distingue mayusculas: "Tap-1" y "TAP-1" se aceptaban como dos
+--      prefijos distintos, pero el folio impreso va en mayusculas (upper) y saldrian dos boletos con el mismo folio.
+--   NOTA: el hueco en id_taquilla (1, 3, 4...) NO es una taquilla perdida: un INSERT que falla (por ejemplo por
+--         identificador o prefijo repetido) igual consume un numero de la secuencia. Es normal y no se corrige.
+
+CREATE OR REPLACE VIEW administracion.v_taquillas AS
+SELECT
+q.id_taquilla,
+t.id_terminal,
+t.nombre_terminal,
+q.identificador,
+q.serie_folio,
+q.rango_inicial,
+q.rango_final,
+q.folios_usados,
+q.activo
+FROM administracion.taquilla q
+INNER JOIN administracion.terminal t ON t.id_terminal = q.id_terminal
+ORDER BY t.nombre_terminal, q.id_taquilla;
+
+
+CREATE OR REPLACE PROCEDURE administracion.sp_guardar_taquilla(p_id_taquilla INT, p_id_terminal INT, p_identificador TEXT,
+    p_serie_folio TEXT, p_rango_inicial INT, p_rango_final INT, p_activo BOOLEAN)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, pg_temp AS $$
+DECLARE
+  v_usados INT;
+  v_inicial INT;
+BEGIN
+  p_identificador := upper(btrim(p_identificador));
+  p_serie_folio := upper(btrim(p_serie_folio));
+  IF p_id_taquilla = 0 THEN
+    INSERT INTO administracion.taquilla (id_terminal, identificador, serie_folio, rango_inicial, rango_final, activo)
+    VALUES (p_id_terminal, p_identificador, p_serie_folio, p_rango_inicial, p_rango_final, p_activo);
+  ELSE
+    SELECT folios_usados, rango_inicial INTO v_usados, v_inicial FROM administracion.taquilla WHERE id_taquilla = p_id_taquilla FOR UPDATE;
+    IF NOT FOUND THEN RAISE EXCEPTION 'La taquilla no existe.' USING ERRCODE = 'Z0034'; END IF;
+    IF v_usados > 0 AND p_rango_inicial <> v_inicial THEN
+      RAISE EXCEPTION 'La taquilla ya vendió folios: no se puede cambiar el folio inicial.' USING ERRCODE = 'Z0035';
+    END IF;
+    IF p_rango_final < p_rango_inicial + v_usados - 1 THEN
+      RAISE EXCEPTION 'El folio final no puede quedar por debajo de los folios ya usados.' USING ERRCODE = 'Z0035';
+    END IF;
+    UPDATE administracion.taquilla
+    SET id_terminal = p_id_terminal, identificador = p_identificador, serie_folio = p_serie_folio,
+        rango_inicial = p_rango_inicial, rango_final = p_rango_final, activo = p_activo
+    WHERE id_taquilla = p_id_taquilla;
+  END IF;
+END $$;
+
+
+UPDATE administracion.taquilla SET serie_folio = upper(btrim(serie_folio)), identificador = upper(btrim(identificador));
+
+
+-- cosas nuevas que no se han ejecutado
+
+CREATE OR REPLACE PROCEDURE administracion.sp_cambiar_estado_taller(p_id_taller INT, p_activo BOOLEAN)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, pg_temp AS $$
+BEGIN
+IF NOT p_activo AND EXISTS (
+SELECT 1 FROM administracion.personal 
+WHERE id_taller = p_id_taller AND activo = TRUE
+) THEN
+RAISE EXCEPTION 'El taller tiene personal activo asignado: reasígnelos o dé de baja al personal antes de desactivar el taller.' USING ERRCODE = 'Z0052';
+END IF;
+UPDATE administracion.taller 
+SET activo = p_activo 
+WHERE id_taller = p_id_taller;
+IF NOT FOUND THEN 
+RAISE EXCEPTION 'El taller no existe.' USING ERRCODE = 'Z0050'; 
+END IF;
+END $$;
+
+CREATE TABLE administracion.taller(
+id_taller INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+id_ciudad INT NOT NULL,
+clave TEXT NOT NULL UNIQUE,
+nombre_taller TEXT NOT NULL UNIQUE,
+direccion TEXT NOT NULL,
+activo BOOLEAN NOT NULL DEFAULT TRUE,
+CONSTRAINT fk_ciudad_taller FOREIGN KEY (id_ciudad) REFERENCES administracion.ciudad(id_ciudad) ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+
+-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+-- TALLERES: sin bahias, alta con sp_guardar_taller, vistas y baja logica
+-- ESTADO: NO EJECUTADO. Correr en este orden sobre zacabus.
+-- NOTA: el CREATE TABLE administracion.taller de arriba NO se corre: la tabla ya existe en la base real.
+--       Este bloque la deja igual que la del script master (sin capacidad_bahias).
+-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+-- 1) Quitar capacidad_bahias (el CHECK check_bahias_positivo se elimina junto con la columna)
+ALTER TABLE administracion.taller DROP COLUMN capacidad_bahias;
+
+
+-- 2) sp_guardar_taller pasa de 6 a 5 parametros (sin p_bahias). Se borra la version vieja para que no queden dos.
+DROP PROCEDURE IF EXISTS administracion.sp_guardar_taller(INT, INT, TEXT, TEXT, TEXT, INT);
+
+CREATE PROCEDURE administracion.sp_guardar_taller(INOUT p_id_taller INT, p_id_ciudad INT, p_clave TEXT,
+    p_nombre TEXT, p_direccion TEXT)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, pg_temp AS $$
+BEGIN
+  IF COALESCE(p_id_taller, 0) = 0 THEN
+    INSERT INTO administracion.taller (id_ciudad, clave, nombre_taller, direccion)
+    VALUES (p_id_ciudad, upper(btrim(p_clave)), btrim(p_nombre), btrim(p_direccion))
+    RETURNING id_taller INTO p_id_taller;
+  ELSE
+    UPDATE administracion.taller
+    SET id_ciudad = p_id_ciudad, clave = upper(btrim(p_clave)), nombre_taller = btrim(p_nombre),
+        direccion = btrim(p_direccion)
+    WHERE id_taller = p_id_taller;
+    IF NOT FOUND THEN RAISE EXCEPTION 'El taller no existe.' USING ERRCODE = 'Z0050'; END IF;
+  END IF;
+END $$;
+
+
+-- 3) Lista de talleres para la pantalla del administrador (mecanicos activos y jefe de taller activo)
+CREATE OR REPLACE VIEW administracion.v_talleres AS
+SELECT
+t.id_taller,
+t.id_ciudad,
+c.nombre_ciudad,
+t.clave,
+t.nombre_taller,
+t.direccion,
+t.activo,
+(SELECT COUNT(*) FROM administracion.personal p WHERE p.id_taller = t.id_taller AND p.id_puesto = 4 AND p.activo)::INT AS mecanicos,
+(SELECT p.nombre_personal || ' ' || p.ap_paterno FROM administracion.personal p
+ WHERE p.id_taller = t.id_taller AND p.id_puesto = 6 AND p.activo) AS encargado
+FROM administracion.taller t
+INNER JOIN administracion.ciudad c ON c.id_ciudad = t.id_ciudad
+ORDER BY c.nombre_ciudad, t.nombre_taller;
+
+
+-- 4) Baja y reactivacion de un taller (la baja se bloquea si tiene personal activo)
+--    Es la misma sp_cambiar_estado_taller de la seccion "cosas nuevas que no se han ejecutado": correr solo una vez.
+--    CREATE OR REPLACE la hace segura de repetir.
+CREATE OR REPLACE PROCEDURE administracion.sp_cambiar_estado_taller(p_id_taller INT, p_activo BOOLEAN)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, pg_temp AS $$
+BEGIN
+  IF NOT p_activo AND EXISTS (
+    SELECT 1 FROM administracion.personal WHERE id_taller = p_id_taller AND activo = TRUE
+  ) THEN
+    RAISE EXCEPTION 'El taller tiene personal activo asignado: reasígnelos o dé de baja al personal antes de desactivar el taller.' USING ERRCODE = 'Z0052';
+  END IF;
+  UPDATE administracion.taller SET activo = p_activo WHERE id_taller = p_id_taller;
+  IF NOT FOUND THEN RAISE EXCEPTION 'El taller no existe.' USING ERRCODE = 'Z0050'; END IF;
+END $$;
+
+
+-- Ya aplicado en la base real (no repetir): v_talleres_activos y la columna id_taller de v_personal.
+-- Se dejan aqui como referencia del script master:
+--   CREATE OR REPLACE VIEW administracion.v_talleres_activos AS
+--   SELECT id_taller, nombre_taller FROM administracion.taller WHERE activo ORDER BY nombre_taller;
+
+
+
+-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+-- PERSONAL: la vista trae la terminal y la taquilla asignadas
+-- ESTADO: NO EJECUTADO. Correr ANTES de abrir la app con el Java nuevo (PersonalDAO lee estas columnas).
+-- POR QUE: v_personal no exponia id_terminal ni id_taquilla, asi que Personal mostraba la asignacion vacia
+--          y al editar un taquillero o despachador el formulario no preseleccionaba su sede y se la borraba.
+--          CREATE OR REPLACE solo admite columnas nuevas AL FINAL (id_taller ya esta).
+-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+CREATE OR REPLACE VIEW administracion.v_personal AS
+SELECT
+p.id_personal,
+pu.id_puesto,
+pu.nombre_puesto,
+p.nombre_personal,
+p.ap_paterno,
+p.ap_materno,
+p.curp,
+p.telefono,
+p.licencia,
+p.vigencia,
+EXISTS (SELECT 1 FROM administracion.personal_app pa WHERE pa.id_personal = p.id_personal) AS tiene_cuenta,
+p.id_taller,
+p.id_terminal,
+p.id_taquilla
+FROM administracion.personal p
+INNER JOIN administracion.puesto pu ON pu.id_puesto = p.id_puesto
+ORDER BY p.ap_paterno, p.ap_materno, p.nombre_personal;
+
+
+
+-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+-- CUENTAS: la vista trae el taller (jefe de taller)
+-- ESTADO: NO EJECUTADO. Correr ANTES de abrir la app con el Java nuevo (CuentaDAO lee estas columnas).
+-- POR QUE: v_cuentas solo traia terminal y taquilla, asi que la cuenta de un jefe de taller mostraba "—" en vez de
+--          su taller. Las columnas nuevas van AL FINAL (CREATE OR REPLACE VIEW no permite insertarlas en medio).
+-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+CREATE OR REPLACE VIEW administracion.v_cuentas AS
+SELECT
+pa.id_app,
+pa.id_personal,
+pa.username,
+p.nombre_personal || ' ' || p.ap_paterno || COALESCE(' ' || p.ap_materno, '') AS nombre_completo,
+r.id_rol,
+r.nombre_rol,
+t.id_terminal,
+t.nombre_terminal,
+q.id_taquilla,
+q.identificador,
+pa.activo,
+tl.id_taller,
+tl.nombre_taller
+FROM administracion.personal_app pa
+INNER JOIN administracion.personal p ON p.id_personal = pa.id_personal
+INNER JOIN administracion.rol r ON r.id_rol = pa.id_rol
+LEFT JOIN administracion.terminal t ON t.id_terminal = p.id_terminal
+LEFT JOIN administracion.taquilla q ON q.id_taquilla = p.id_taquilla
+LEFT JOIN administracion.taller tl ON tl.id_taller = p.id_taller
+ORDER BY pa.username;
+
+
+
+-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+-- FLOTA DEL TALLER: unidades con su semaforo (lo lee la pantalla Flota del jefe de taller)
+-- ESTADO: NO EJECUTADO. Requiere el FDW ya creado (taller_remoto.v_semaforo_unidades, ver fdw_demo.sql).
+-- LEFT JOIN: una unidad activa que aun no esta registrada en el taller sale como SIN REGISTRO y no apta,
+--            en vez de desaparecer de la lista.
+-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+CREATE OR REPLACE VIEW viajes.v_flota_taller AS
+SELECT
+u.placa,
+u.modelo,
+COALESCE(s.estatus, 'SIN REGISTRO') AS estatus,
+COALESCE(s.apto_para_viajar, FALSE) AS apto_para_viajar,
+s.ultima_fecha_ingreso,
+s.observaciones
+FROM viajes.unidad u
+LEFT JOIN taller_remoto.v_semaforo_unidades s ON s.placa = u.placa
+WHERE u.activo
+ORDER BY u.placa;
+
+
+
+-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+-- FLUJO DE TALLER (parte 1): semaforo, ingreso, cierre y bloqueo en el despacho
+-- ESTADO: NO EJECUTADO.
+--
+-- EN POCAS LINEAS:
+--   * Una unidad que nunca ha entrado a taller cuenta como OPERATIVA: ya no hace falta insertar placas a mano.
+--   * viajes.sp_registrar_ingreso mete un bus a taller (crea la orden y cambia su estado).
+--   * viajes.sp_cerrar_orden lo saca (cierra la orden y lo deja operativo o de baja).
+--   * El despachador solo ve unidades aptas y la base rechaza (Z0005) programar una que no lo sea.
+--
+-- ORDEN: PARTE A conectado a la base TALLER; PARTE B conectado a ZACABUS (requiere el FDW de fdw_demo.sql).
+-- Sustituye al bloque "FLOTA DEL TALLER" de arriba: v_flota_taller conserva sus columnas y suma id_unidad e id_taller.
+-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+--ejecute todo esto
+-- ======================================= PARTE A: conectado a la base TALLER =======================================
+
+-- A1) La orden guarda el tipo de mantenimiento con que ingreso (2 preventivo, 3 correctivo). Hoy no se guardaba.
+ALTER TABLE taller.orden_completa
+  ADD COLUMN id_estado_ingreso INT REFERENCES taller.estado_taller(id_estado) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+
+-- ======================================= PARTE B: conectado a la base ZACABUS =======================================
+
+-- B1) Tablas del taller que zacabus lee y escribe (solo estas tres; el FDW ya existe: srv_taller).
+--     Se importan DESPUES de A1 para que orden_completa traiga la columna nueva.
+IMPORT FOREIGN SCHEMA taller LIMIT TO (bus_taller, orden_completa, estado_taller)
+  FROM SERVER srv_taller INTO taller_remoto;
+
+-- B2) Tabla solo para INSERTAR ordenes. No incluye id_orden a proposito: postgres_fdw manda NULL en las columnas
+--     que no se escriben, y eso choca con la identidad GENERATED ALWAYS de la tabla remota. Sin esa columna, el
+--     taller genera el numero de orden solo.
+CREATE FOREIGN TABLE taller_remoto.orden_ingreso(
+placa TEXT NOT NULL,
+id_taller INT NOT NULL,
+id_personal INT NOT NULL,
+fecha_ingreso TIMESTAMPTZ NOT NULL,
+diagnostico TEXT,
+costo DECIMAL(10,2) NOT NULL,
+id_estado_ingreso INT
+) SERVER srv_taller OPTIONS (schema_name 'taller', table_name 'orden_completa');
+
+
+-- B3) Semaforo de TODA la flota activa. Sin fila en el taller = operativa.
+CREATE OR REPLACE VIEW viajes.v_flota_taller AS
+SELECT
+u.placa,
+u.modelo,
+COALESCE(e.nombre_estado, 'OPERATIVO') AS estatus,
+COALESCE(b.id_estado, 1) = 1 AS apto_para_viajar,
+b.ultima_fecha_ingreso,
+b.observaciones,
+u.id_unidad,
+b.id_taller
+FROM viajes.unidad u
+LEFT JOIN taller_remoto.bus_taller b ON b.placa = u.placa
+LEFT JOIN taller_remoto.estado_taller e ON e.id_estado = b.id_estado
+WHERE u.activo
+ORDER BY u.placa;
+
+
+-- B4) Unidades que el despachador puede programar (mismas columnas que la vista anterior)
+CREATE OR REPLACE VIEW viajes.v_unidades_disponibles AS
+SELECT u.id_unidad, u.id_tipo_bus, u.placa, u.modelo, u.anio, u.kilometraje, u.activo
+FROM viajes.unidad u
+INNER JOIN viajes.v_flota_taller f ON f.id_unidad = u.id_unidad
+WHERE f.apto_para_viajar;
+
+
+-- B5) Mecanicos que el jefe puede elegir (los de su taller)
+CREATE OR REPLACE VIEW administracion.v_mecanicos_taller AS
+SELECT
+p.id_personal,
+p.id_taller,
+p.nombre_personal || ' ' || p.ap_paterno || COALESCE(' ' || p.ap_materno, '') AS nombre_completo
+FROM administracion.personal p
+WHERE p.id_puesto = 4 AND p.activo AND p.id_taller IS NOT NULL
+ORDER BY p.ap_paterno, p.ap_materno, p.nombre_personal;
+
+
+-- B6) Ordenes con nombres (las usan la lista del jefe y la auditoria del admin)
+CREATE OR REPLACE VIEW viajes.v_ordenes_taller AS
+SELECT
+o.id_orden,
+o.placa,
+u.modelo,
+o.id_taller,
+t.nombre_taller,
+o.id_personal,
+p.nombre_personal || ' ' || p.ap_paterno AS mecanico,
+o.fecha_ingreso,
+o.fecha_salida,
+o.diagnostico,
+o.costo,
+CASE o.id_estado_ingreso WHEN 2 THEN 'Preventivo' WHEN 3 THEN 'Correctivo' ELSE '—' END AS tipo_servicio,
+o.fecha_salida IS NULL AS abierta
+FROM taller_remoto.orden_completa o
+LEFT JOIN viajes.unidad u ON u.placa = o.placa
+LEFT JOIN administracion.taller t ON t.id_taller = o.id_taller
+LEFT JOIN administracion.personal p ON p.id_personal = o.id_personal
+ORDER BY o.fecha_ingreso DESC;
+
+
+-- B7) Meter un bus a taller. p_tipo: 2 preventivo, 3 correctivo.
+--     Z0053 unidad no existe o inactiva | Z0054 ya tiene orden abierta | Z0055 mecanico invalido
+--     Z0056 tipo invalido | Z0058 costo invalido | Z0050 taller no existe o inactivo
+CREATE OR REPLACE PROCEDURE viajes.sp_registrar_ingreso(p_placa TEXT, p_id_taller INT, p_id_personal INT, p_tipo INT,
+    p_fecha_ingreso TIMESTAMPTZ, p_diagnostico TEXT, p_costo NUMERIC, p_observaciones TEXT)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, pg_temp AS $$
+DECLARE
+  v_fecha TIMESTAMPTZ := COALESCE(p_fecha_ingreso, now());
+BEGIN
+  IF p_tipo IS NULL OR p_tipo NOT IN (2, 3) THEN
+    RAISE EXCEPTION 'Elija si el mantenimiento es preventivo o correctivo.' USING ERRCODE = 'Z0056';
+  END IF;
+  IF COALESCE(p_costo, -1) < 0 THEN
+    RAISE EXCEPTION 'El costo no puede ser negativo.' USING ERRCODE = 'Z0058';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM viajes.unidad WHERE placa = p_placa AND activo) THEN
+    RAISE EXCEPTION 'La unidad no existe o está inactiva.' USING ERRCODE = 'Z0053';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM administracion.taller WHERE id_taller = p_id_taller AND activo) THEN
+    RAISE EXCEPTION 'El taller no existe o está inactivo.' USING ERRCODE = 'Z0050';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM administracion.personal
+                 WHERE id_personal = p_id_personal AND id_puesto = 4 AND activo AND id_taller = p_id_taller) THEN
+    RAISE EXCEPTION 'El mecánico debe ser personal activo de este taller.' USING ERRCODE = 'Z0055';
+  END IF;
+  IF EXISTS (SELECT 1 FROM taller_remoto.orden_completa WHERE placa = p_placa AND fecha_salida IS NULL) THEN
+    RAISE EXCEPTION 'Esa unidad ya tiene una orden abierta.' USING ERRCODE = 'Z0054';
+  END IF;
+
+  -- Primero el estado del bus (la orden remota depende de que exista su fila), luego la orden.
+  UPDATE taller_remoto.bus_taller
+  SET id_estado = p_tipo, id_taller = p_id_taller, ultima_fecha_ingreso = v_fecha,
+      observaciones = NULLIF(btrim(p_observaciones), '')
+  WHERE placa = p_placa;
+  IF NOT FOUND THEN
+    INSERT INTO taller_remoto.bus_taller (placa, id_estado, id_taller, ultima_fecha_ingreso, observaciones)
+    VALUES (p_placa, p_tipo, p_id_taller, v_fecha, NULLIF(btrim(p_observaciones), ''));
+  END IF;
+
+  INSERT INTO taller_remoto.orden_ingreso (placa, id_taller, id_personal, fecha_ingreso, diagnostico, costo, id_estado_ingreso)
+  VALUES (p_placa, p_id_taller, p_id_personal, v_fecha, NULLIF(btrim(p_diagnostico), ''), p_costo, p_tipo);
+END $$;
+
+
+-- B8) Sacar un bus de taller. p_estado_final: 1 operativo, 4 de baja. Solo cierra ordenes abiertas DE ESE TALLER.
+--     Z0057 la orden no existe, ya esta cerrada o es de otro taller | Z0058 dato invalido
+CREATE OR REPLACE PROCEDURE viajes.sp_cerrar_orden(p_id_orden INT, p_id_taller INT, p_fecha_salida TIMESTAMPTZ,
+    p_diagnostico TEXT, p_costo NUMERIC, p_estado_final INT)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, pg_temp AS $$
+DECLARE
+  v_placa TEXT;
+  v_ingreso TIMESTAMPTZ;
+  v_salida TIMESTAMPTZ := COALESCE(p_fecha_salida, now());
+BEGIN
+  SELECT placa, fecha_ingreso INTO v_placa, v_ingreso
+  FROM taller_remoto.orden_completa
+  WHERE id_orden = p_id_orden AND id_taller = p_id_taller AND fecha_salida IS NULL;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'La orden no existe, ya está cerrada o es de otro taller.' USING ERRCODE = 'Z0057';
+  END IF;
+  IF p_estado_final IS NULL OR p_estado_final NOT IN (1, 4) THEN
+    RAISE EXCEPTION 'Elija si el bus sale operativo o de baja.' USING ERRCODE = 'Z0058';
+  END IF;
+  IF COALESCE(p_costo, -1) < 0 THEN
+    RAISE EXCEPTION 'El costo no puede ser negativo.' USING ERRCODE = 'Z0058';
+  END IF;
+  IF v_salida < v_ingreso THEN
+    RAISE EXCEPTION 'La salida no puede ser anterior al ingreso.' USING ERRCODE = 'Z0058';
+  END IF;
+
+  UPDATE taller_remoto.orden_completa
+  SET fecha_salida = v_salida, diagnostico = NULLIF(btrim(p_diagnostico), ''), costo = p_costo
+  WHERE id_orden = p_id_orden;
+
+  UPDATE taller_remoto.bus_taller SET id_estado = p_estado_final WHERE placa = v_placa;
+END $$;
+
+
+-- B9) La base rechaza programar una unidad que no esta apta (en taller o de baja).
+--     Si el taller no responde, falla la consulta y NO se programa: es lo mas seguro.
+CREATE OR REPLACE FUNCTION viajes.fn_validar_unidad_taller()
+RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, pg_temp AS $$
+BEGIN
+  IF NEW.id_unidad IS NOT NULL AND NOT EXISTS (
+       SELECT 1 FROM viajes.v_flota_taller WHERE id_unidad = NEW.id_unidad AND apto_para_viajar) THEN
+    RAISE EXCEPTION 'La unidad está en taller, de baja o inactiva: no se puede asignar a una salida.' USING ERRCODE = 'Z0005';
+  END IF;
+  RETURN NEW;
+END $$;
+
+CREATE TRIGGER tigresito_validar_unidad_taller
+BEFORE INSERT OR UPDATE OF id_unidad ON viajes.viaje_programado
+FOR EACH ROW EXECUTE FUNCTION viajes.fn_validar_unidad_taller();
+
+
+-- ======================================= PRUEBA RAPIDA (en zacabus, despues de B) =======================================
+--   SELECT placa, estatus, apto_para_viajar FROM viajes.v_flota_taller;               -- todas las unidades activas
+--   CALL viajes.sp_registrar_ingreso('DMA20', <id_taller>, <id_mecanico>, 3, now(), 'Frenos', 1500, 'Prueba');
+--   SELECT placa FROM viajes.v_unidades_disponibles;                                   -- DMA20 ya no aparece
+--   SELECT * FROM viajes.v_ordenes_taller;                                             -- la orden abierta
+--   CALL viajes.sp_cerrar_orden(<id_orden>, <id_taller>, now(), 'Listo', 1500, 1);
+--   SELECT placa FROM viajes.v_unidades_disponibles;                                   -- DMA20 vuelve a aparecer
+
+
+
+-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+-- TALLERES (parte 2): jefes de taller para elegir al encargado
+-- ESTADO: NO EJECUTADO. Correr ANTES de abrir la app con el Java nuevo (el formulario de taller lee esta vista).
+-- POR QUE: el combo "Encargado" estaba vacio. Lista los jefes de taller activos y el taller que ya encargan;
+--          la app ofrece solo los libres o el del taller que se esta editando. sp_asignar_encargado ya existe.
+-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+CREATE OR REPLACE VIEW administracion.v_jefes_taller AS
+SELECT
+p.id_personal,
+p.id_taller,
+p.nombre_personal || ' ' || p.ap_paterno || COALESCE(' ' || p.ap_materno, '') AS nombre_completo
+FROM administracion.personal p
+WHERE p.id_puesto = 6 AND p.activo
+ORDER BY p.ap_paterno, p.ap_materno, p.nombre_personal;

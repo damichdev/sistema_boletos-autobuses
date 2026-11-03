@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<!-- Ventana de alta y edición de taquillas: terminal fija, número (genera el identificador), prefijo, rango y estado. -->
+<StackPane styleClass="ventana-sombra" fx:controller="michelle.zaca_bus.controller.admin.TaquillasController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+    <VBox styleClass="ventana" prefWidth="560" maxWidth="560" maxHeight="-Infinity">
+        <HBox styleClass="ventana-titulo" alignment="CENTER_LEFT">
+            <VBox spacing="2">
+                <Label fx:id="lblTitulo" text="NUEVA TAQUILLA" styleClass="ventana-titulo-texto"/>
+                <Label text="Registre una nueva ventanilla de venta y asigne su rango exclusivo de folios." styleClass="texto-sec"/>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="×" styleClass="boton, cerrar-x" onAction="#cerrar"/>
+        </HBox>
+        <VBox styleClass="ventana-cuerpo" spacing="16">
+            <VBox spacing="6" styleClass="campo">
+                <Label text="TERMINAL" styleClass="campo-etiqueta"/>
+                <TextField fx:id="txtTerminal" editable="false" styleClass="text-field, text-input, campo-bloqueado"/>
+            </VBox>
+            <VBox spacing="6" styleClass="campo">
+                <Label text="NÚMERO DE TAQUILLA / IDENTIFICADOR" styleClass="campo-etiqueta"/>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <TextField fx:id="txtNumero" promptText="04" HBox.hgrow="ALWAYS" styleClass="text-field, text-input, mono"/>
+                    <TextField fx:id="txtIdentificador" promptText="TAQ-04" editable="false" HBox.hgrow="ALWAYS" styleClass="text-field, text-input, mono, campo-bloqueado"/>
+                </HBox>
+            </VBox>
+            <VBox spacing="6" styleClass="campo">
+                <Label text="PREFIJO DE FOLIOS" styleClass="campo-etiqueta"/>
+                <TextField fx:id="txtSerie" promptText="TAP1-4" styleClass="text-field, text-input, mono"/>
+                <Label text="Prefijo para los boletos de esta ventanilla" styleClass="texto-sec"/>
+            </VBox>
+            <VBox spacing="6" styleClass="campo">
+                <Label text="RANGO DE FOLIOS" styleClass="campo-etiqueta"/>
+                <HBox spacing="14">
+                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                        <Label text="Folio Inicial" styleClass="texto-sec"/>
+                        <TextField fx:id="txtInicial" promptText="13001" styleClass="text-field, text-input, mono"/>
+                    </VBox>
+                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                        <Label text="Folio Final" styleClass="texto-sec"/>
+                        <TextField fx:id="txtFinal" promptText="18000" styleClass="text-field, text-input, mono"/>
+                    </VBox>
+                </HBox>
+            </VBox>
+            <VBox spacing="6" styleClass="campo">
+                <Label text="ESTADO" styleClass="campo-etiqueta"/>
+                <CheckBox fx:id="chkActiva" text="Activa" selected="true"/>
+            </VBox>
+            <Label fx:id="lblError" styleClass="alerta, alerta-error" maxWidth="Infinity" wrapText="true" visible="false" managed="false"/>
+        </VBox>
+        <HBox styleClass="ventana-pie" spacing="10" alignment="CENTER_RIGHT">
+            <Button text="Cancelar" styleClass="boton, boton-secundario" onAction="#cerrar"/>
+            <Button text="Guardar taquilla" styleClass="boton, boton-primario" onAction="#guardar"/>
+        </HBox>
+    </VBox>
+</StackPane>

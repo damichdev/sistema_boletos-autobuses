@@ -4,68 +4,65 @@
 
 ALTER DATABASE taller SET timezone TO 'America/Mexico_City';
 
+CREATE SCHEMA taller;
+
+ALTER DATABASE taller SET search_path = taller, public;
+
 -- ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 -- TABLAS
 
-CREATE TABLE estado_taller(
+CREATE TABLE taller.estado_taller(
 id_estado INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 nombre_estado TEXT NOT NULL UNIQUE
 );
 
 
-CREATE TABLE bus_taller(
+CREATE TABLE taller.bus_taller(
 placa TEXT primary key,
 id_estado INT NOT NULL DEFAULT 1,
+id_taller INT,
 ultima_fecha_ingreso TIMESTAMPTZ,
 observaciones TEXT,
-CONSTRAINT fk_estado_bus FOREIGN KEY (id_estado) REFERENCES estado_taller(id_estado) ON DELETE RESTRICT ON UPDATE CASCADE
+CONSTRAINT fk_estado_bus FOREIGN KEY (id_estado) REFERENCES taller.estado_taller(id_estado) ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
-CREATE TABLE mecanico(
-id_mecanico INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-nombre_mecanico TEXT NOT NULL,
-ap_paterno TEXT NOT NULL,
-ap_materno TEXT,
-especialidad TEXT NOT NULL,
-activo BOOLEAN DEFAULT TRUE
-);
 
-CREATE TABLE orden_completa(
+CREATE TABLE taller.orden_completa(
 id_orden INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 placa TEXT NOT NULL,
-id_mecanico INT NOT NULL,
+id_taller INT NOT NULL,
+id_personal INT NOT NULL,
 fecha_ingreso TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 fecha_salida TIMESTAMPTZ,
 diagnostico TEXT,
 costo DECIMAL(10,2) NOT NULL,
 CONSTRAINT check_fecha_salida CHECK (fecha_salida IS NULL OR fecha_salida >= fecha_ingreso),
 CONSTRAINT check_costo_positivo CHECK (costo >= 0),
-CONSTRAINT fk_placa_orden FOREIGN KEY (placa) REFERENCES bus_taller(placa) ON DELETE RESTRICT ON UPDATE CASCADE,
-CONSTRAINT fk_mecanico_orden FOREIGN KEY (id_mecanico) REFERENCES mecanico(id_mecanico) ON DELETE RESTRICT ON UPDATE CASCADE
+CONSTRAINT fk_placa_orden FOREIGN KEY (placa) REFERENCES taller.bus_taller(placa) ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
-
+CREATE UNIQUE INDEX unq_orden_abierta ON taller.orden_completa (placa) WHERE fecha_salida IS NULL;
 
 -- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 -- LLENADO TABLAS CATALOGO (solo 1 xD)
 
-INSERT INTO estado_taller (id_estado, nombre_estado) OVERRIDING SYSTEM VALUE VALUES
+INSERT INTO taller.estado_taller (id_estado, nombre_estado) OVERRIDING SYSTEM VALUE VALUES
 (1, 'OPERATIVO'),
 (2, 'MANTENIMIENTO PREVENTIVO'),
 (3, 'MANTENIMIENTO CORRECTIVO'),
 (4, 'DE BAJA');
 
-SELECT setval(pg_get_serial_sequence('estado_taller', 'id_estado'), (SELECT MAX(id_estado) FROM estado_taller));
+SELECT setval(pg_get_serial_sequence('taller.estado_taller', 'id_estado'), (SELECT MAX(id_estado) FROM taller.estado_taller));
 
 
 -- /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 -- VISTA
 
-CREATE OR REPLACE VIEW v_semaforo_unidades AS
+CREATE OR REPLACE VIEW taller.v_semaforo_unidades AS
 SELECT
 b.placa,
 e.nombre_estado AS estatus,
@@ -73,5 +70,5 @@ CASE
 WHEN e.id_estado = 1 THEN TRUE
 ELSE FALSE
 END AS apto_para_viajar
-FROM bus_taller b
-INNER JOIN estado_taller e ON b.id_estado = e.id_estado;
+FROM taller.bus_taller b
+INNER JOIN taller.estado_taller e ON b.id_estado = e.id_estado;

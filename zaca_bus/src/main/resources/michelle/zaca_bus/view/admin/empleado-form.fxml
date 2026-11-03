@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<!-- Alta y edición de empleados. Los campos de la derecha cambian con el puesto:
+     chofer = licencia, vigencia y área; taquillero = terminal y taquilla; despachador = terminal. -->
+<StackPane styleClass="ventana-sombra" fx:controller="michelle.zaca_bus.controller.admin.EmpleadoFormController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+    <VBox styleClass="ventana" prefWidth="760" maxWidth="760" maxHeight="-Infinity">
+        <HBox styleClass="ventana-titulo" alignment="CENTER_LEFT">
+            <VBox spacing="2">
+                <Label fx:id="lblTitulo" text="NUEVO EMPLEADO" styleClass="ventana-titulo-texto"/>
+                <Label text="Registre un nuevo colaborador en el sistema. Los campos se adaptarán según el puesto seleccionado." styleClass="texto-sec"/>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="×" styleClass="boton, cerrar-x" onAction="#cerrar"/>
+        </HBox>
+        <VBox styleClass="ventana-cuerpo" spacing="16">
+            <GridPane hgap="18" vgap="12">
+                <columnConstraints>
+                    <ColumnConstraints percentWidth="50.0" hgrow="ALWAYS"/>
+                    <ColumnConstraints percentWidth="50.0" hgrow="ALWAYS"/>
+                </columnConstraints>
+                <VBox spacing="4" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                    <Label text="NOMBRE(S)" styleClass="campo-etiqueta"/>
+                    <TextField fx:id="txtNombre" styleClass="text-field, text-input"/>
+                    <Label text="Ej: Juan Carlos" styleClass="texto-sec"/>
+                </VBox>
+                <VBox spacing="4" styleClass="campo" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                    <Label text="TELÉFONO" styleClass="campo-etiqueta"/>
+                    <TextField fx:id="txtTelefono" styleClass="text-field, text-input, mono"/>
+                    <Label text="10 dígitos" styleClass="texto-sec"/>
+                </VBox>
+                <VBox spacing="4" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                    <Label text="APELLIDO PATERNO" styleClass="campo-etiqueta"/>
+                    <TextField fx:id="txtApPaterno" styleClass="text-field, text-input"/>
+                    <Label text="Ej: Pérez" styleClass="texto-sec"/>
+                </VBox>
+                <VBox spacing="4" styleClass="campo" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                    <Label text="PUESTO" styleClass="campo-etiqueta"/>
+                    <ComboBox fx:id="cbPuesto" promptText="Puesto" maxWidth="Infinity"/>
+                </VBox>
+                <VBox spacing="4" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="2">
+                    <Label text="APELLIDO MATERNO" styleClass="campo-etiqueta"/>
+                    <TextField fx:id="txtApMaterno" styleClass="text-field, text-input"/>
+                    <Label text="Ej: Gómez" styleClass="texto-sec"/>
+                </VBox>
+                <HBox fx:id="boxLicencia" spacing="14" GridPane.columnIndex="1" GridPane.rowIndex="2" visible="false" managed="false">
+                    <VBox spacing="4" styleClass="campo" HBox.hgrow="ALWAYS">
+                        <Label text="LICENCIA (VIGENCIA)" styleClass="campo-etiqueta"/>
+                        <TextField fx:id="txtLicencia" promptText="Licencia" styleClass="text-field, text-input, mono"/>
+                    </VBox>
+                    <VBox spacing="4" styleClass="campo" HBox.hgrow="ALWAYS">
+                        <Label text="VIGENCIA DE LICENCIA" styleClass="campo-etiqueta"/>
+                        <DatePicker fx:id="dpVigencia" promptText="aaaa-mm-dd" maxWidth="Infinity"/>
+                    </VBox>
+                </HBox>
+                <VBox spacing="4" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="3">
+                    <Label text="CURP" styleClass="campo-etiqueta"/>
+                    <TextField fx:id="txtCurp" styleClass="text-field, text-input, mono"/>
+                    <Label text="Ej: JIPC880101HDFXXN00" styleClass="texto-sec"/>
+                </VBox>
+                <VBox spacing="12" GridPane.columnIndex="1" GridPane.rowIndex="3">
+                    <VBox fx:id="boxTerminal" spacing="4" styleClass="campo" visible="false" managed="false">
+                        <Label fx:id="lblTerminal" text="TERMINAL" styleClass="campo-etiqueta"/>
+                        <ComboBox fx:id="cbTerminal" promptText="Terminal" maxWidth="Infinity"/>
+                        <Label fx:id="lblNotaTerminal" styleClass="texto-sec" wrapText="true"/>
+                    </VBox>
+                    <VBox fx:id="boxTaquilla" spacing="4" styleClass="campo" visible="false" managed="false">
+                        <Label text="TAQUILLA ASIGNADA" styleClass="campo-etiqueta"/>
+                        <ComboBox fx:id="cbTaquilla" promptText="Taquilla" maxWidth="Infinity" disable="true"/>
+                        <Label text="Seleccione la ventanilla o caja asignada para la venta" styleClass="texto-sec" wrapText="true"/>
+                    </VBox>
+                    <VBox fx:id="boxTaller" spacing="4" styleClass="campo" visible="false" managed="false">
+                        <Label text="TALLER ASIGNADO" styleClass="campo-etiqueta"/>
+                        <ComboBox fx:id="cbTaller" promptText="Sin asignar" maxWidth="Infinity"/>
+                        <Label text="Opcional para el mecánico. El jefe de taller necesita taller para tener cuenta" styleClass="texto-sec" wrapText="true"/>
+                    </VBox>
+                    <VBox fx:id="boxArea" spacing="4" styleClass="campo" visible="false" managed="false">
+                        <Label text="ASIGNACIÓN / ÁREA" styleClass="campo-etiqueta"/>
+                        <ComboBox fx:id="cbArea" maxWidth="Infinity" disable="true"/>
+                        <Label text="Los choferes se asignan de forma global a la operación de rutas" styleClass="texto-sec" wrapText="true"/>
+                    </VBox>
+                </VBox>
+            </GridPane>
+            <Label fx:id="lblError" styleClass="alerta, alerta-error" maxWidth="Infinity" wrapText="true" visible="false" managed="false"/>
+        </VBox>
+        <HBox styleClass="ventana-pie" spacing="10" alignment="CENTER_RIGHT">
+            <Button text="Cancelar" styleClass="boton, boton-secundario" onAction="#cerrar"/>
+            <Button text="Guardar empleado" styleClass="boton, boton-primario" onAction="#guardar"/>
+        </HBox>
+    </VBox>
+</StackPane>

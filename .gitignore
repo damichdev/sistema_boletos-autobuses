@@ -1,1 +1,7 @@
 /zaca_bus/target/
+
+fdw_demo.sql
+
+.agents/
+.claude/
+skills-lock.json

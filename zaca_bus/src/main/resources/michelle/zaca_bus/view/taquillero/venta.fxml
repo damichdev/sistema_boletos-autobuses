@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.SVGPath?>
+
+<!-- Venta en una sola pantalla: 4 paneles de tamaño fijo (2×2). -->
+<BorderPane styleClass="pagina" fx:controller="michelle.zaca_bus.controller.taquillero.VentaController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+    <left>
+        <fx:include source="barra-taquillero.fxml"/>
+    </left>
+    <center>
+        <ScrollPane fitToWidth="true" styleClass="pagina-scroll">
+            <VBox styleClass="contenido" spacing="20">
+                <GridPane hgap="20" vgap="20">
+                    <columnConstraints>
+                        <ColumnConstraints percentWidth="50" hgrow="ALWAYS"/>
+                        <ColumnConstraints percentWidth="50" hgrow="ALWAYS"/>
+                    </columnConstraints>
+                    <rowConstraints>
+                        <RowConstraints minHeight="250" prefHeight="250" vgrow="NEVER"/>
+                        <RowConstraints minHeight="620" prefHeight="620" vgrow="NEVER"/>
+                    </rowConstraints>
+                    <VBox styleClass="panel" spacing="14" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                        <HBox alignment="CENTER_LEFT">
+                            <Label text="Destino" styleClass="panel-titulo"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                        </HBox>
+                        <Label fx:id="lblMensaje" styleClass="alerta, alerta-error" maxWidth="Infinity" wrapText="true" visible="false" managed="false"/>
+                        <HBox spacing="14">
+                            <VBox spacing="6" styleClass="campo" HBox.hgrow="ALWAYS">
+                                <Label text="ORIGEN" styleClass="campo-etiqueta"/>
+                                <ComboBox fx:id="cbOrigen" promptText="Origen" maxWidth="Infinity"/>
+                            </VBox>
+                            <VBox spacing="6" styleClass="campo" HBox.hgrow="ALWAYS">
+                                <Label text="DESTINO" styleClass="campo-etiqueta"/>
+                                <ComboBox fx:id="cbDestino" promptText="Elija el destino" maxWidth="Infinity"/>
+                            </VBox>
+                        </HBox>
+                        <VBox spacing="6" styleClass="campo">
+                            <Label text="FECHA" styleClass="campo-etiqueta"/>
+                            <DatePicker fx:id="dpFecha" promptText="Hoy" maxWidth="Infinity"/>
+                        </VBox>
+                    </VBox>
+                    <VBox styleClass="panel" spacing="14" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                        <HBox alignment="CENTER_LEFT">
+                            <Label text="Horario" styleClass="panel-titulo"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                        </HBox>
+                        <Label fx:id="lblSinHorarios" text="Elija el destino para ver los horarios." styleClass="tabla-vacia"/>
+                        <GridPane fx:id="gridHorarios" hgap="8" vgap="8">
+                            <columnConstraints>
+                                <ColumnConstraints percentWidth="100" hgrow="ALWAYS"/>
+                            </columnConstraints>
+                        </GridPane>
+                        <Region VBox.vgrow="ALWAYS"/>
+                        <Button fx:id="btnTodos" text="Ver todos los horarios del día" styleClass="boton, boton-secundario, boton-chico" onAction="#verTodos" visible="false" managed="false"/>
+                    </VBox>
+                    <VBox styleClass="panel" spacing="14" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                        <HBox alignment="CENTER_LEFT">
+                            <Label text="Asientos" styleClass="panel-titulo"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Button text="Mostrar al cliente" styleClass="boton, boton-secundario, boton-chico" onAction="#irA" id="mostrar-cliente"/>
+                        </HBox>
+                        <HBox spacing="24" alignment="CENTER" VBox.vgrow="ALWAYS">
+                            <VBox spacing="12" styleClass="leyenda">
+                                <HBox spacing="8" alignment="CENTER_LEFT">
+                                    <Region styleClass="swatch, swatch-libre"/>
+                                    <Label text="Libre" styleClass="leyenda-texto"/>
+                                </HBox>
+                                <HBox spacing="8" alignment="CENTER_LEFT">
+                                    <Region styleClass="swatch, swatch-ocupado"/>
+                                    <Label text="Ocupado" styleClass="leyenda-texto"/>
+                                </HBox>
+                                <HBox spacing="8" alignment="CENTER_LEFT">
+                                    <Region styleClass="swatch, swatch-elegido"/>
+                                    <Label text="Elegido" styleClass="leyenda-texto"/>
+                                </HBox>
+                            </VBox>
+                            <Label fx:id="lblSinAsientos" text="Elija un horario para ver el autobús." styleClass="tabla-vacia"/>
+                            <VBox fx:id="boxAutobus" styleClass="autobus" alignment="TOP_CENTER" maxWidth="-Infinity" maxHeight="-Infinity" visible="false" managed="false">
+                                <GridPane fx:id="gridAsientos" hgap="6" vgap="6"/>
+                            </VBox>
+                        </HBox>
+                    </VBox>
+                    <VBox styleClass="panel" spacing="14" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                        <HBox alignment="CENTER_LEFT">
+                            <Label text="Titular y tarifas" styleClass="panel-titulo"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                        </HBox>
+                        <VBox spacing="6" styleClass="campo">
+                            <Label text="NOMBRE(S) DEL TITULAR" styleClass="campo-etiqueta"/>
+                            <TextField fx:id="txtNombre" promptText="Como aparece en su identificación" styleClass="text-field, text-input"/>
+                        </VBox>
+                        <HBox spacing="14">
+                            <VBox spacing="6" styleClass="campo" HBox.hgrow="ALWAYS">
+                                <Label text="APELLIDO PATERNO" styleClass="campo-etiqueta"/>
+                                <TextField fx:id="txtApPaterno" styleClass="text-field, text-input"/>
+                            </VBox>
+                            <VBox spacing="6" styleClass="campo" HBox.hgrow="ALWAYS">
+                                <Label text="APELLIDO MATERNO" styleClass="campo-etiqueta"/>
+                                <TextField fx:id="txtApMaterno" styleClass="text-field, text-input"/>
+                            </VBox>
+                        </HBox>
+                        <VBox spacing="6" styleClass="campo">
+                            <Label text="CURP (OPCIONAL)" styleClass="campo-etiqueta"/>
+                            <TextField fx:id="txtCurp" promptText="18 caracteres" styleClass="text-field, text-input, mono"/>
+                        </VBox>
+                        <Label text="TARIFA POR ASIENTO" styleClass="campo-etiqueta"/>
+                        <ScrollPane fitToWidth="true" styleClass="pagina-scroll" prefHeight="96" minHeight="96" maxHeight="96">
+                            <VBox fx:id="boxTarifas" spacing="6"/>
+                        </ScrollPane>
+                        <Region styleClass="separador"/>
+                        <Label text="Cobro" styleClass="panel-titulo"/>
+                        <HBox alignment="BASELINE_LEFT">
+                            <Label text="Total" styleClass="texto-sec"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Label fx:id="lblTotal" text="\$0.00" styleClass="total-monto"/>
+                        </HBox>
+                        <HBox spacing="14">
+                            <VBox spacing="6" styleClass="campo" HBox.hgrow="ALWAYS">
+                                <Label text="EFECTIVO RECIBIDO" styleClass="campo-etiqueta"/>
+                                <TextField fx:id="txtRecibido" promptText="\$0.00" styleClass="text-field, text-input, mono"/>
+                            </VBox>
+                            <VBox spacing="6" minWidth="130">
+                                <Label text="CAMBIO" styleClass="campo-etiqueta"/>
+                                <Label fx:id="lblCambio" text="—" styleClass="cambio-monto"/>
+                            </VBox>
+                        </HBox>
+                        <Region VBox.vgrow="ALWAYS"/>
+                        <Button text="Confirmar venta" styleClass="boton, boton-primario, boton-grande" onAction="#confirmar" maxWidth="Infinity"/>
+                    </VBox>
+                </GridPane>
+            </VBox>
+        </ScrollPane>
+    </center>
+</BorderPane>

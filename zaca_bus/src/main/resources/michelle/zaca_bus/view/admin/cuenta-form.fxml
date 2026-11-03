@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<!-- Crear o editar una cuenta. El rol y la sede se heredan del empleado y solo se muestran. -->
+<StackPane styleClass="ventana-sombra" fx:controller="michelle.zaca_bus.controller.admin.CuentaFormController" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1">
+    <VBox styleClass="ventana" prefWidth="760" maxWidth="760" maxHeight="-Infinity">
+        <HBox styleClass="ventana-titulo" alignment="CENTER_LEFT">
+            <VBox spacing="2">
+                <Label fx:id="lblTitulo" text="NUEVA CUENTA" styleClass="ventana-titulo-texto"/>
+                <Label text="Cree un acceso para el personal. El rol y la sede se heredan automáticamente de su registro de empleado para evitar inconsistencias." styleClass="texto-sec" wrapText="true"/>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="×" styleClass="boton, cerrar-x" onAction="#cerrar"/>
+        </HBox>
+        <VBox styleClass="ventana-cuerpo" spacing="16">
+            <GridPane hgap="18" vgap="12">
+                <columnConstraints>
+                    <ColumnConstraints percentWidth="50.0" hgrow="ALWAYS"/>
+                    <ColumnConstraints percentWidth="50.0" hgrow="ALWAYS"/>
+                </columnConstraints>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                    <Label text="SELECCIONAR EMPLEADO (SIN CUENTA)" styleClass="campo-etiqueta"/>
+                    <ComboBox fx:id="cbPersona" promptText="Elija al empleado" maxWidth="Infinity"/>
+                    <TextField fx:id="txtPersona" disable="true" styleClass="text-field, text-input, campo-bloqueado"/>
+                </VBox>
+                <VBox spacing="4" styleClass="campo" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                    <Label text="USUARIO (SE GENERA SOLO O PERSONALIZADO)" styleClass="campo-etiqueta"/>
+                    <TextField fx:id="txtUsuario" styleClass="text-field, text-input, mono"/>
+                    <Label text="Nombre de acceso" styleClass="texto-sec"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                    <Label text="ROL DEL EMPLEADO" styleClass="campo-etiqueta"/>
+                    <TextField fx:id="txtRol" editable="false" focusTraversable="false" styleClass="text-field, text-input, campo-bloqueado"/>
+                </VBox>
+                <VBox spacing="4" styleClass="campo" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                    <Label fx:id="lblContrasena" text="CONTRASEÑA TEMPORAL" styleClass="campo-etiqueta"/>
+                    <PasswordField fx:id="txtContrasena" styleClass="password-field, text-field, text-input"/>
+                    <Label text="Se le pedirá cambiarla al iniciar" styleClass="texto-sec"/>
+                </VBox>
+                <VBox spacing="6" styleClass="campo" GridPane.columnIndex="0" GridPane.rowIndex="2">
+                    <Label text="SEDE / ASIGNACIÓN REGISTRADA" styleClass="campo-etiqueta"/>
+                    <TextField fx:id="txtSede" editable="false" focusTraversable="false" styleClass="text-field, text-input, campo-bloqueado"/>
+                </VBox>
+            </GridPane>
+            <Label text="Nota: Los datos de rol, ciudad y taquilla se configuran desde el módulo de Personal y no pueden ser modificados aquí." styleClass="texto-sec, chico" wrapText="true"/>
+            <Label fx:id="lblError" styleClass="alerta, alerta-error" maxWidth="Infinity" wrapText="true" visible="false" managed="false"/>
+        </VBox>
+        <HBox styleClass="ventana-pie" spacing="10" alignment="CENTER_RIGHT">
+            <Button text="Cancelar" styleClass="boton, boton-secundario" onAction="#cerrar"/>
+            <Button fx:id="btnGuardar" text="Crear cuenta" styleClass="boton, boton-primario" onAction="#guardarCuenta"/>
+        </HBox>
+    </VBox>
+</StackPane>
